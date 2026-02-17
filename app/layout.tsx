@@ -18,7 +18,18 @@ const spaceMono = Space_Mono({
 
 export const metadata: Metadata = {
   title: "SHOWER TRACKER",
-  description: "Hot water coordination for the household",
+  description: "One shower at a time. Hot water coordination for the household.",
+  openGraph: {
+    title: "🚿 SHOWER TRACKER",
+    description: "One shower at a time. Claim your slot, respect the queue.",
+    type: "website",
+    siteName: "Shower Tracker",
+  },
+  twitter: {
+    card: "summary",
+    title: "🚿 SHOWER TRACKER",
+    description: "One shower at a time. Claim your slot, respect the queue.",
+  },
   other: {
     "apple-mobile-web-app-capable": "yes",
     "theme-color": "#F5F0E8",
