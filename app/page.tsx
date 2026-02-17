@@ -11,6 +11,7 @@ const USERS = ["Chase", "Livia", "A.J.", "Dad", "Mom"];
 const SLOT_COLORS = ["slot-yolk", "slot-mint", "slot-sky", "slot-bubblegum"];
 const DURATIONS = [15, 20, 30, 45, 60];
 const AUTO_RELEASE_SECONDS = 2700;
+const MIN_SHOWER_SECONDS = 5;
 const USER_STORAGE_KEY = "showerTimerUser";
 
 interface ShowerStatus {
@@ -186,12 +187,14 @@ function StatusBanner({
 }) {
   const [elapsed, setElapsed] = useState(0);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const autoReleasedRef = useRef(false);
 
   const isOccupied = status?.currentUser != null;
   const isMe = status?.currentUser === currentUser;
 
   useEffect(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
+    autoReleasedRef.current = false;
 
     if (isOccupied && status?.startedAt) {
       const update = () => {
@@ -209,9 +212,10 @@ function StatusBanner({
     };
   }, [isOccupied, status?.startedAt]);
 
-  // Auto-release
+  // Auto-release (fire only once)
   useEffect(() => {
-    if (isMe && elapsed >= AUTO_RELEASE_SECONDS) {
+    if (isMe && elapsed >= AUTO_RELEASE_SECONDS && !autoReleasedRef.current) {
+      autoReleasedRef.current = true;
       if (status?.startedAt) onAutoRelease(status.startedAt);
       set(ref(db, "status"), { currentUser: null, startedAt: null });
       if (status?.currentUser) {
@@ -275,9 +279,26 @@ function ShowerButton({
   const isOccupied = status?.currentUser != null;
   const isMe = status?.currentUser === currentUser;
   const canAct = !isOccupied || isMe;
+  const [cooldown, setCooldown] = useState(false);
+
+  // Enforce minimum shower duration before allowing stop
+  useEffect(() => {
+    if (!isMe || !status?.startedAt) {
+      setCooldown(false);
+      return;
+    }
+    const elapsedSecs = (Date.now() - status.startedAt) / 1000;
+    if (elapsedSecs >= MIN_SHOWER_SECONDS) {
+      setCooldown(false);
+      return;
+    }
+    setCooldown(true);
+    const timer = setTimeout(() => setCooldown(false), (MIN_SHOWER_SECONDS - elapsedSecs) * 1000);
+    return () => clearTimeout(timer);
+  }, [isMe, status?.startedAt]);
 
   const handleClick = () => {
-    if (!canAct) return;
+    if (!canAct || cooldown) return;
 
     if (isMe) {
       if (status?.startedAt) onEnd(status.startedAt);
@@ -310,7 +331,7 @@ function ShowerButton({
   };
 
   const label = isMe
-    ? "I'M DONE"
+    ? cooldown ? "JUST STARTED..." : "I'M DONE"
     : isOccupied
       ? `${status!.currentUser} is in there...`
       : "START SHOWER";
@@ -319,14 +340,14 @@ function ShowerButton({
     <motion.button
       className={`brutal-btn w-full py-6 rounded-2xl font-display text-2xl sm:text-3xl tracking-wide ${
         isMe
-          ? "bg-coral text-white"
+          ? cooldown ? "bg-gray-300 text-ink" : "bg-coral text-white"
           : isOccupied
             ? "bg-gray-200 text-ink"
             : "bg-lime text-ink"
       }`}
-      disabled={!canAct}
+      disabled={!canAct || cooldown}
       onClick={handleClick}
-      whileTap={canAct ? { scale: 0.97 } : undefined}
+      whileTap={canAct && !cooldown ? { scale: 0.97 } : undefined}
     >
       {label}
     </motion.button>
@@ -883,6 +904,17 @@ function LoginScreen({
 // ============================================================
 // PUSH NOTIFICATION HELPERS
 // ============================================================
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; i++) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
 async function subscribeToPush(user: string) {
   if (typeof window === "undefined") return;
   if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
@@ -896,7 +928,7 @@ async function subscribeToPush(user: string) {
       if (!vapidKey) return;
       subscription = await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: vapidKey,
+        applicationServerKey: urlBase64ToUint8Array(vapidKey) as BufferSource,
       });
     }
 
