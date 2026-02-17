@@ -612,6 +612,7 @@ function TickerBar() {
 // ============================================================
 function sendNotification(title: string, body: string) {
   if (typeof window === "undefined") return;
+  if (!("Notification" in window)) return;
   if (Notification.permission !== "granted") return;
   try {
     new Notification(title, { body, icon: "🚿" });
@@ -688,10 +689,14 @@ export default function Home() {
 
     const unsubStatus = onValue(statusRef, (snap) => {
       setStatus(snap.val());
+    }, () => {
+      // Ignore listener errors (e.g. Safari private mode).
     });
 
     const unsubSlots = onValue(slotsRef, (snap) => {
       setSlots(snap.val());
+    }, () => {
+      // Ignore listener errors (e.g. Safari private mode).
     });
 
     // Cleanup old slots
@@ -707,6 +712,8 @@ export default function Home() {
       snap.forEach((child) => {
         remove(child.ref);
       });
+    }).catch(() => {
+      // Ignore cleanup failures (e.g. Safari private mode).
     });
 
     return () => {
