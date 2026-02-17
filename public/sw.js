@@ -8,7 +8,28 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(self.clients.claim());
 });
 
-// Listen for messages from the main app to show notifications
+// Handle push notifications from server
+self.addEventListener("push", (event) => {
+  let data = { title: "Shower Tracker", body: "Shower status changed" };
+  try {
+    if (event.data) {
+      data = event.data.json();
+    }
+  } catch {
+    // Use defaults
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: "/icon",
+      badge: "/icon",
+      tag: "shower-status",
+      renotify: true,
+    })
+  );
+});
+
+// Listen for messages from the main app to show notifications (fallback)
 self.addEventListener("message", (event) => {
   const { type, title, body } = event.data || {};
   if (type === "SHOW_NOTIFICATION") {

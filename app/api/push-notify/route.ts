@@ -1,0 +1,75 @@
+import { NextRequest, NextResponse } from "next/server";
+import webpush from "web-push";
+
+const FIREBASE_DB_URL = "https://shower-tracker-276d6-default-rtdb.firebaseio.com";
+
+const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!;
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY!;
+
+webpush.setVapidDetails(
+  "mailto:shower-tracker@example.com",
+  VAPID_PUBLIC_KEY,
+  VAPID_PRIVATE_KEY,
+);
+
+interface PushRecord {
+  subscription: webpush.PushSubscription;
+  user: string;
+  updatedAt: number;
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const { title, body, excludeUser } = await req.json();
+
+    if (!title || !body) {
+      return NextResponse.json({ error: "Missing title or body" }, { status: 400 });
+    }
+
+    // Read all push subscriptions from Firebase
+    const res = await fetch(`${FIREBASE_DB_URL}/pushSubscriptions.json`);
+    if (!res.ok) {
+      return NextResponse.json({ error: "Failed to read subscriptions" }, { status: 500 });
+    }
+
+    const data: Record<string, PushRecord> | null = await res.json();
+    if (!data) {
+      return NextResponse.json({ sent: 0 });
+    }
+
+    const payload = JSON.stringify({ title, body });
+    const staleKeys: string[] = [];
+    let sent = 0;
+
+    const results = await Promise.allSettled(
+      Object.entries(data).map(async ([key, record]) => {
+        // Skip the user who triggered the notification
+        if (excludeUser && record.user === excludeUser) return;
+
+        try {
+          await webpush.sendNotification(record.subscription, payload);
+          sent++;
+        } catch (err: unknown) {
+          // If subscription is expired/invalid (410 Gone or 404), mark for cleanup
+          if (err && typeof err === "object" && "statusCode" in err) {
+            const statusCode = (err as { statusCode: number }).statusCode;
+            if (statusCode === 404 || statusCode === 410) {
+              staleKeys.push(key);
+            }
+          }
+        }
+      }),
+    );
+
+    // Clean up stale subscriptions
+    await Promise.allSettled(
+      staleKeys.map((key) =>
+        fetch(`${FIREBASE_DB_URL}/pushSubscriptions/${key}.json`, { method: "DELETE" }),
+      ),
+    );
+
+    return NextResponse.json({ sent, cleaned: staleKeys.length });
+  } catch {
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
+}

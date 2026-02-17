@@ -214,6 +214,9 @@ function StatusBanner({
     if (isMe && elapsed >= AUTO_RELEASE_SECONDS) {
       if (status?.startedAt) onAutoRelease(status.startedAt);
       set(ref(db, "status"), { currentUser: null, startedAt: null });
+      if (status?.currentUser) {
+        sendPushNotification("Shower Free ✅", `${status.currentUser} is done — shower is free!`, status.currentUser);
+      }
     }
   }, [isMe, elapsed]);
 
@@ -279,6 +282,7 @@ function ShowerButton({
     if (isMe) {
       if (status?.startedAt) onEnd(status.startedAt);
       set(ref(db, "status"), { currentUser: null, startedAt: null });
+      sendPushNotification("Shower Free ✅", `${currentUser} is done — shower is free!`, currentUser);
       return;
     }
 
@@ -302,6 +306,7 @@ function ShowerButton({
     }
 
     set(ref(db, "status"), { currentUser, startedAt: Date.now() });
+    sendPushNotification("Shower Occupied 🚿", `${currentUser} just started showering`, currentUser);
   };
 
   const label = isMe
@@ -876,14 +881,54 @@ function LoginScreen({
 }
 
 // ============================================================
-// MAIN PAGE
+// PUSH NOTIFICATION HELPERS
 // ============================================================
-async function sendNotification(title: string, body: string) {
+async function subscribeToPush(user: string) {
+  if (typeof window === "undefined") return;
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    let subscription = await reg.pushManager.getSubscription();
+
+    if (!subscription) {
+      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+      if (!vapidKey) return;
+      subscription = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: vapidKey,
+      });
+    }
+
+    // Store subscription on the server
+    await fetch("/api/push-subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subscription: subscription.toJSON(), user }),
+    });
+  } catch {
+    // Push subscription not supported or denied
+  }
+}
+
+async function sendPushNotification(title: string, body: string, excludeUser: string) {
+  try {
+    await fetch("/api/push-notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, body, excludeUser }),
+    });
+  } catch {
+    // Ignore send failures
+  }
+}
+
+// Also show a local notification if the tab is open (for the receiving user)
+async function sendLocalNotification(title: string, body: string) {
   if (typeof window === "undefined") return;
   if (!("Notification" in window)) return;
   if (Notification.permission !== "granted") return;
 
-  // Use service worker notification if available (works when tab is backgrounded)
   if ("serviceWorker" in navigator) {
     try {
       const reg = await navigator.serviceWorker.ready;
@@ -900,6 +945,10 @@ async function sendNotification(title: string, body: string) {
     // Safari/iOS may not support Notification constructor
   }
 }
+
+// ============================================================
+// MAIN PAGE
+// ============================================================
 
 export default function Home() {
   const { user: authUser, loading: authLoading, error: authError, signIn, signOut } = useAuth();
@@ -926,16 +975,31 @@ export default function Home() {
       });
     }
 
-    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
-      try {
-        void Notification.requestPermission();
-      } catch {
-        // Ignore permission request failures.
-      }
+    // Request notification permission and subscribe to push
+    if (typeof window !== "undefined" && "Notification" in window) {
+      (async () => {
+        try {
+          if (Notification.permission === "default") {
+            await Notification.requestPermission();
+          }
+          if (Notification.permission === "granted" && savedUser) {
+            await subscribeToPush(savedUser);
+          }
+        } catch {
+          // Ignore permission/subscription failures.
+        }
+      })();
     }
   }, []);
 
-  // Send notifications on status changes
+  // Re-subscribe to push when user changes
+  useEffect(() => {
+    if (currentUser && typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+      subscribeToPush(currentUser);
+    }
+  }, [currentUser]);
+
+  // Show local notifications on status changes (for when the tab is open)
   useEffect(() => {
     // Skip the very first load (prevStatusRef is undefined)
     if (prevStatusRef.current === undefined) {
@@ -951,7 +1015,7 @@ export default function Home() {
     // Someone started showering
     if (status?.currentUser && !prev?.currentUser) {
       if (status.currentUser !== currentUser) {
-        sendNotification(
+        sendLocalNotification(
           "Shower Occupied 🚿",
           `${status.currentUser} just started showering`
         );
@@ -961,7 +1025,7 @@ export default function Home() {
     // Someone finished showering
     if (!status?.currentUser && prev?.currentUser) {
       if (prev.currentUser !== currentUser) {
-        sendNotification(
+        sendLocalNotification(
           "Shower Free ✅",
           `${prev.currentUser} is done — shower is free!`
         );
