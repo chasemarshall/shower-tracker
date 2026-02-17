@@ -132,6 +132,10 @@ body::before {
   font-size: 16px;
   outline: none;
   transition: box-shadow 0.1s ease;
+  box-sizing: border-box;
+  max-width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .brutal-input:focus {

@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { db } from "@/lib/firebase";
 import { ref, onValue, set, push, remove, query, orderByChild, endAt, get } from "firebase/database";
 
-const USERS = ["Chase", "Livia", "A.J.", "Dad"];
+const USERS = ["Chase", "Livia", "A.J.", "Dad", "Mom"];
 const SLOT_COLORS = ["slot-yolk", "slot-mint", "slot-sky", "slot-bubblegum"];
 const DURATIONS = [15, 20, 30, 45, 60];
 const AUTO_RELEASE_SECONDS = 2700;
@@ -53,7 +53,7 @@ function formatElapsed(seconds: number): string {
 // USER SELECT SCREEN
 // ============================================================
 function UserSelectScreen({ onSelect }: { onSelect: (name: string) => void }) {
-  const colors = ["bg-lime", "bg-sky", "bg-yolk", "bg-bubblegum"];
+  const colors = ["bg-lime", "bg-sky", "bg-yolk", "bg-bubblegum", "bg-mint"];
 
   return (
     <motion.div
@@ -471,7 +471,7 @@ function ClaimModal({
           }}
         >
           <motion.div
-            className="brutal-card bg-paper rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md max-h-[90dvh] overflow-y-auto p-6 sm:mx-4"
+            className="brutal-card bg-paper rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md max-h-[90dvh] overflow-y-auto overflow-x-hidden p-5 sm:p-6 sm:mx-4"
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
@@ -481,32 +481,32 @@ function ClaimModal({
               Claim a Slot
             </h3>
 
-            <div className="flex flex-col gap-5">
-              {/* Date + Time side by side */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-mono text-sm font-bold uppercase tracking-wider block mb-2">
-                    Date
-                  </label>
-                  <input
-                    type="date"
-                    value={date}
-                    min={getToday()}
-                    onChange={(e) => setDate(e.target.value)}
-                    className="brutal-input w-full rounded-xl text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="font-mono text-sm font-bold uppercase tracking-wider block mb-2">
-                    Time
-                  </label>
-                  <input
-                    type="time"
-                    value={time}
-                    onChange={(e) => setTime(e.target.value)}
-                    className="brutal-input w-full rounded-xl text-sm"
-                  />
-                </div>
+            <div className="flex flex-col gap-5 overflow-hidden">
+              {/* Date */}
+              <div>
+                <label className="font-mono text-sm font-bold uppercase tracking-wider block mb-2">
+                  Date
+                </label>
+                <input
+                  type="date"
+                  value={date}
+                  min={getToday()}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="brutal-input w-full rounded-xl"
+                />
+              </div>
+
+              {/* Start time */}
+              <div>
+                <label className="font-mono text-sm font-bold uppercase tracking-wider block mb-2">
+                  Start Time
+                </label>
+                <input
+                  type="time"
+                  value={time}
+                  onChange={(e) => setTime(e.target.value)}
+                  className="brutal-input w-full rounded-xl"
+                />
               </div>
 
               {/* Duration */}
