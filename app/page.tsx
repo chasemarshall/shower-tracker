@@ -581,21 +581,70 @@ function TickerBar() {
 // ============================================================
 // MAIN PAGE
 // ============================================================
+function sendNotification(title: string, body: string) {
+  if (typeof window === "undefined") return;
+  if (Notification.permission !== "granted") return;
+  try {
+    new Notification(title, { body, icon: "🚿" });
+  } catch {
+    // Safari/iOS may not support Notification constructor
+  }
+}
+
 export default function Home() {
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [status, setStatus] = useState<ShowerStatus | null>(null);
   const [slots, setSlots] = useState<SlotsMap | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const prevStatusRef = useRef<ShowerStatus | null | undefined>(undefined);
 
-  // Load user from localStorage
+  // Load user from localStorage + request notification permission
   useEffect(() => {
     const saved = localStorage.getItem("showerTimerUser");
     if (saved && USERS.includes(saved)) {
       setCurrentUser(saved);
     }
     setLoaded(true);
+
+    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
   }, []);
+
+  // Send notifications on status changes
+  useEffect(() => {
+    // Skip the very first load (prevStatusRef is undefined)
+    if (prevStatusRef.current === undefined) {
+      prevStatusRef.current = status;
+      return;
+    }
+
+    const prev = prevStatusRef.current;
+    prevStatusRef.current = status;
+
+    if (!currentUser) return;
+
+    // Someone started showering
+    if (status?.currentUser && !prev?.currentUser) {
+      if (status.currentUser !== currentUser) {
+        sendNotification(
+          "Shower Occupied 🚿",
+          `${status.currentUser} just started showering`
+        );
+      }
+    }
+
+    // Someone finished showering
+    if (!status?.currentUser && prev?.currentUser) {
+      if (prev.currentUser !== currentUser) {
+        sendNotification(
+          "Shower Free ✅",
+          `${prev.currentUser} is done — shower is free!`
+        );
+      }
+    }
+  }, [status, currentUser]);
 
   // Firebase listeners
   useEffect(() => {
