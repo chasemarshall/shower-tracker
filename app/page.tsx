@@ -995,8 +995,18 @@ export default function Home() {
       // Ignore listener errors (e.g. Safari private mode).
     });
 
-    // Clear all existing log entries
-    remove(ref(db, "log")).catch(() => {
+    // Cleanup old log entries (older than 24h)
+    const cutoff24h = Date.now() - 24 * 60 * 60 * 1000;
+    const oldLogQuery = query(
+      ref(db, "log"),
+      orderByChild("endedAt"),
+      endAt(cutoff24h)
+    );
+    get(oldLogQuery).then((snap) => {
+      snap.forEach((child) => {
+        remove(child.ref);
+      });
+    }).catch(() => {
       // Ignore cleanup failures.
     });
 
