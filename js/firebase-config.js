@@ -1,12 +1,11 @@
-// Replace these with your Firebase project config
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
-  projectId: "YOUR_PROJECT",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyDNCvshO1GDxK9ZR6cG1t6mBtHeOE6azOo",
+  authDomain: "shower-tracker-276d6.firebaseapp.com",
+  databaseURL: "https://shower-tracker-276d6-default-rtdb.firebaseio.com",
+  projectId: "shower-tracker-276d6",
+  storageBucket: "shower-tracker-276d6.firebasestorage.app",
+  messagingSenderId: "999850460751",
+  appId: "1:999850460751:web:f33941135fdd7ac3254c3a"
 };
 
 firebase.initializeApp(firebaseConfig);
