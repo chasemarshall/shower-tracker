@@ -119,7 +119,6 @@ body::before {
 
 /* Modal backdrop */
 .modal-backdrop {
-  backdrop-filter: blur(4px);
   background: rgba(26, 26, 26, 0.4);
 }
 
