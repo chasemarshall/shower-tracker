@@ -471,7 +471,7 @@ function ClaimModal({
           }}
         >
           <motion.div
-            className="brutal-card bg-paper rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md max-h-[90dvh] overflow-y-auto overflow-x-hidden p-5 sm:p-6 sm:mx-4"
+            className="brutal-card bg-paper rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md max-h-[90dvh] p-5 sm:p-6 sm:mx-4"
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
@@ -481,7 +481,7 @@ function ClaimModal({
               Claim a Slot
             </h3>
 
-            <div className="flex flex-col gap-5 overflow-hidden">
+            <div className="flex flex-col gap-5">
               {/* Date */}
               <div>
                 <label className="font-mono text-sm font-bold uppercase tracking-wider block mb-2">
@@ -542,7 +542,7 @@ function ClaimModal({
               </div>
             </div>
 
-            <div className="flex gap-3 mt-6">
+            <div className="flex gap-3 mt-6 pb-2">
               <button
                 className="brutal-btn bg-white flex-1 py-4 rounded-xl font-display text-base uppercase"
                 onClick={onClose}
