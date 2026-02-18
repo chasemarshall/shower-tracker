@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "VAPID keys not configured" }, { status: 500 });
     }
 
-    webpush.setVapidDetails("mailto:shower-tracker@example.com", vapidPublic, vapidPrivate);
+    webpush.setVapidDetails("mailto:water-hq@example.com", vapidPublic, vapidPrivate);
 
     const { title, body, excludeUser, targetUsers } = await req.json();
 

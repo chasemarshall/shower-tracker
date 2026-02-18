@@ -1,4 +1,4 @@
-/// Service Worker for Shower Tracker PWA
+/// Service Worker for Water HQ PWA
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();

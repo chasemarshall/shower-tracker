@@ -1,4 +1,4 @@
-# Shower Tracker
+# Water HQ
 
 A family shower coordination PWA built with Next.js, Firebase Realtime Database, and Framer Motion. Deployed on Vercel.
 

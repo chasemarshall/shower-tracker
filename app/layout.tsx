@@ -18,17 +18,17 @@ const spaceMono = Space_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SHOWER TRACKER",
+  title: "WATER HQ",
   description: "One shower at a time. Hot water coordination for the household.",
   openGraph: {
-    title: "🚿 SHOWER TRACKER",
+    title: "🚿 WATER HQ",
     description: "One shower at a time. Claim your slot, respect the queue.",
     type: "website",
-    siteName: "Shower Tracker",
+    siteName: "Water HQ",
   },
   twitter: {
     card: "summary",
-    title: "🚿 SHOWER TRACKER",
+    title: "🚿 WATER HQ",
     description: "One shower at a time. Claim your slot, respect the queue.",
   },
   other: {

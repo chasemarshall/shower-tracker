@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "🚿 SHOWER",
-    short_name: "🚿 SHOWER",
+    name: "💧 WATER HQ",
+    short_name: "💧 WATER HQ",
     description: "One shower at a time. Hot water coordination for the household.",
     start_url: "/",
     display: "standalone",
