@@ -40,15 +40,25 @@ function normalizeAllowedEmails(value: unknown): Set<string> {
   );
 }
 
+const ALLOWLIST_CACHE_TTL_MS = 60_000;
+type AllowlistEntry = { emails: Set<string>; expiresAt: number };
+const allowlistCache = new Map<string, AllowlistEntry>();
+
 async function isAllowlistedEmail(email: string): Promise<boolean> {
   try {
-    const allowedEmailsSnap = await adminDb.ref(adminPath("allowedEmails")).once("value");
-    if (!allowedEmailsSnap.exists()) {
-      return false;
+    const now = Date.now();
+    const cached = allowlistCache.get("allowedEmails");
+    if (!cached || now >= cached.expiresAt) {
+      const snap = await adminDb.ref(adminPath("allowedEmails")).once("value");
+      if (!snap.exists()) {
+        return false;
+      }
+      allowlistCache.set("allowedEmails", {
+        emails: normalizeAllowedEmails(snap.val()),
+        expiresAt: now + ALLOWLIST_CACHE_TTL_MS,
+      });
     }
-
-    const allowlisted = normalizeAllowedEmails(allowedEmailsSnap.val());
-    return allowlisted.has(email);
+    return allowlistCache.get("allowedEmails")!.emails.has(email);
   } catch {
     // Fail closed on authorization data errors.
     return false;

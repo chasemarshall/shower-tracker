@@ -1,17 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { sendPushNotification } from "@/lib/notifications";
-import { auth } from "@/lib/firebase";
 
-type AuthLike = {
-  currentUser?: {
-    getIdToken: () => Promise<string>;
-  } | null;
-};
+const mockAuth = vi.hoisted(() => ({
+  currentUser: null as { getIdToken: () => Promise<string> } | null,
+}));
+
+vi.mock("@/lib/firebase", () => ({
+  auth: mockAuth,
+  db: {},
+  googleProvider: {},
+}));
 
 describe("sendPushNotification", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    (auth as AuthLike).currentUser = null;
+    mockAuth.currentUser = null;
   });
 
   it("calls fetch with correct payload", async () => {
@@ -48,8 +51,7 @@ describe("sendPushNotification", () => {
   });
 
   it("adds authorization header when token is available", async () => {
-    const authMock = auth as AuthLike;
-    authMock.currentUser = {
+    mockAuth.currentUser = {
       getIdToken: vi.fn().mockResolvedValue("token-123"),
     };
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("ok"));
@@ -68,8 +70,6 @@ describe("sendPushNotification", () => {
       body: JSON.stringify({
         title: "Secure",
         body: "Secure body",
-        excludeUser: undefined,
-        targetUsers: undefined,
       }),
     });
   });

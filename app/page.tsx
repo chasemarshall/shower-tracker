@@ -80,15 +80,10 @@ export default function Home() {
           try {
             const result = await Notification.requestPermission();
             setNotifPermission(result);
-            if (result === "granted" && savedUser) {
-              await subscribeToPush(savedUser);
-            }
           } catch {
             // Ignore permission/subscription failures.
           }
         })();
-      } else if (Notification.permission === "granted" && savedUser) {
-        subscribeToPush(savedUser);
       }
     }
   }, []);

@@ -166,6 +166,32 @@ describe("push route auth", () => {
     expect(response.status).toBe(403);
   });
 
+  it("returns 403 when verified token has no email", async () => {
+    mocks.verifyIdToken.mockResolvedValue({});
+
+    const subscribeReq = buildRequest(
+      "http://localhost/api/push-subscribe",
+      {
+        subscription: { endpoint: "https://example.com/sub" },
+        user: "Chase",
+      },
+      "valid-token",
+    );
+    const notifyReq = buildRequest(
+      "http://localhost/api/push-notify",
+      { title: "Test", body: "Body" },
+      "valid-token",
+    );
+
+    const [subscribeRes, notifyRes] = await Promise.all([
+      pushSubscribePost(subscribeReq),
+      pushNotifyPost(notifyReq),
+    ]);
+
+    expect(subscribeRes.status).toBe(403);
+    expect(notifyRes.status).toBe(403);
+  });
+
   it("allows push-notify for authenticated allowlisted caller", async () => {
     mocks.once.mockImplementation(async (path: string) => {
       if (path === "allowedEmails") {

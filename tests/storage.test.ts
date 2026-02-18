@@ -40,7 +40,7 @@ describe("storage", () => {
 
   describe("error handling", () => {
     it("handles localStorage errors gracefully in getPersistedUser", () => {
-      vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      vi.spyOn(localStorage, "getItem").mockImplementation(() => {
         throw new Error("QuotaExceededError");
       });
       expect(getPersistedUser()).toBeNull();
@@ -48,7 +48,7 @@ describe("storage", () => {
     });
 
     it("handles localStorage errors gracefully in persistUser", () => {
-      vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      vi.spyOn(localStorage, "setItem").mockImplementation(() => {
         throw new Error("QuotaExceededError");
       });
       // Should not throw
@@ -57,7 +57,7 @@ describe("storage", () => {
     });
 
     it("handles localStorage errors gracefully in clearPersistedUser", () => {
-      vi.spyOn(Storage.prototype, "removeItem").mockImplementation(() => {
+      vi.spyOn(localStorage, "removeItem").mockImplementation(() => {
         throw new Error("SecurityError");
       });
       expect(() => clearPersistedUser()).not.toThrow();
