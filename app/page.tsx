@@ -21,10 +21,13 @@ const MIN_SHOWER_SECONDS = 5;
 const USER_STORAGE_KEY = "showerTimerUser";
 const SLOT_ALERT_WINDOW_MS = 90_000;
 const TEN_MINUTES_MS = 10 * 60 * 1000;
+const PENDING_COUNTDOWN_MS = 10 * 60 * 1000;
 
 interface ShowerStatus {
   currentUser: string | null;
   startedAt: number | null;
+  pendingUser: string | null;
+  pendingAt: number | null;
 }
 
 interface Slot {
@@ -197,13 +200,18 @@ function StatusBanner({
   onAutoRelease: (startedAt: number) => void;
 }) {
   const [elapsed, setElapsed] = useState(0);
+  const [pendingRemaining, setPendingRemaining] = useState(0);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const autoReleasedRef = useRef(false);
+  const pendingStartedRef = useRef(false);
 
   const isOccupied = status?.currentUser != null;
   const isMe = status?.currentUser === currentUser;
+  const isPending = status?.pendingUser != null && !isOccupied;
+  const isPendingMe = status?.pendingUser === currentUser;
 
-  const recentShower = !isOccupied && log
+  const recentShower = !isOccupied && !isPending && log
     ? Object.values(log).find((entry) => Date.now() - entry.endedAt < 30 * 60 * 1000)
     : null;
 
@@ -227,12 +235,50 @@ function StatusBanner({
     };
   }, [isOccupied, status?.startedAt]);
 
+  // Pending countdown timer
+  useEffect(() => {
+    if (pendingIntervalRef.current) clearInterval(pendingIntervalRef.current);
+    pendingStartedRef.current = false;
+
+    if (isPending && status?.pendingAt) {
+      const update = () => {
+        const elapsedMs = Date.now() - status.pendingAt!;
+        const remainingMs = Math.max(0, PENDING_COUNTDOWN_MS - elapsedMs);
+        setPendingRemaining(Math.ceil(remainingMs / 1000));
+
+        // Auto-start shower when countdown reaches 0 (only the pending user's client does this)
+        if (remainingMs <= 0 && isPendingMe && !pendingStartedRef.current) {
+          pendingStartedRef.current = true;
+          set(ref(db, "status"), {
+            currentUser: status.pendingUser,
+            startedAt: Date.now(),
+            pendingUser: null,
+            pendingAt: null,
+          });
+          sendPushNotification({
+            title: "🚿 SHOWER",
+            body: `${status.pendingUser} started showering`,
+            excludeUser: status.pendingUser!,
+          });
+        }
+      };
+      update();
+      pendingIntervalRef.current = setInterval(update, 1000);
+    } else {
+      setPendingRemaining(0);
+    }
+
+    return () => {
+      if (pendingIntervalRef.current) clearInterval(pendingIntervalRef.current);
+    };
+  }, [isPending, isPendingMe, status?.pendingAt, status?.pendingUser]);
+
   // Auto-release (fire only once)
   useEffect(() => {
     if (isMe && elapsed >= AUTO_RELEASE_SECONDS && !autoReleasedRef.current) {
       autoReleasedRef.current = true;
       if (status?.startedAt) onAutoRelease(status.startedAt);
-      set(ref(db, "status"), { currentUser: null, startedAt: null });
+      set(ref(db, "status"), { currentUser: null, startedAt: null, pendingUser: null, pendingAt: null });
       if (status?.currentUser) {
         sendPushNotification({
           title: "🚿 SHOWER",
@@ -246,7 +292,7 @@ function StatusBanner({
   return (
     <motion.div
       className={`brutal-card rounded-2xl p-6 sm:p-8 text-center ${
-        isOccupied ? "bg-coral pulse-occupied" : recentShower ? "bg-sky" : "bg-lime"
+        isOccupied ? "bg-coral pulse-occupied" : isPending ? "bg-yolk" : recentShower ? "bg-sky" : "bg-lime"
       }`}
       layout
       animate={{ scale: isOccupied ? [1, 1.01, 1] : 1 }}
@@ -259,6 +305,11 @@ function StatusBanner({
               Occupied
             </span>
             {status!.currentUser} is showering
+          </>
+        ) : isPending ? (
+          <>
+            <span className="block text-6xl sm:text-7xl mb-2">⏳</span>
+            {status!.pendingUser} is showering in
           </>
         ) : recentShower ? (
           <>
@@ -285,6 +336,16 @@ function StatusBanner({
           {formatElapsed(elapsed)}
         </motion.div>
       )}
+
+      {isPending && (
+        <motion.div
+          className="font-mono text-5xl sm:text-6xl font-bold mt-4 timer-tick"
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+        >
+          {formatElapsed(pendingRemaining)}
+        </motion.div>
+      )}
     </motion.div>
   );
 }
@@ -307,9 +368,11 @@ function ShowerButton({
 }) {
   const isOccupied = status?.currentUser != null;
   const isMe = status?.currentUser === currentUser;
-  const canAct = !isOccupied || isMe;
+  const isPending = status?.pendingUser != null && !isOccupied;
+  const isPendingMe = status?.pendingUser === currentUser;
+  const canAct = (!isOccupied && !isPending) || isMe || isPendingMe;
   const [cooldown, setCooldown] = useState(false);
-  const recentShower = !isOccupied && log
+  const recentShower = !isOccupied && !isPending && log
     ? Object.values(log).find((entry) => Date.now() - entry.endedAt < 30 * 60 * 1000)
     : null;
 
@@ -332,12 +395,24 @@ function ShowerButton({
   const handleClick = () => {
     if (!canAct || cooldown) return;
 
+    // Currently showering - end shower
     if (isMe) {
       if (status?.startedAt) onEnd(status.startedAt);
-      set(ref(db, "status"), { currentUser: null, startedAt: null });
+      set(ref(db, "status"), { currentUser: null, startedAt: null, pendingUser: null, pendingAt: null });
       sendPushNotification({
         title: "🚿 SHOWER",
         body: `${currentUser} is done`,
+        excludeUser: currentUser,
+      });
+      return;
+    }
+
+    // Currently pending - cancel pending
+    if (isPendingMe) {
+      set(ref(db, "status"), { currentUser: null, startedAt: null, pendingUser: null, pendingAt: null });
+      sendPushNotification({
+        title: "🚿 SHOWER",
+        body: `${currentUser} cancelled their shower`,
         excludeUser: currentUser,
       });
       return;
@@ -362,28 +437,35 @@ function ShowerButton({
       }
     }
 
-    set(ref(db, "status"), { currentUser, startedAt: Date.now() });
+    // Start pending countdown instead of immediately starting
+    set(ref(db, "status"), { currentUser: null, startedAt: null, pendingUser: currentUser, pendingAt: Date.now() });
     sendPushNotification({
       title: "🚿 SHOWER",
-      body: `${currentUser} started showering`,
+      body: `${currentUser} will be showering in 10 minutes`,
       excludeUser: currentUser,
     });
   };
 
   const label = isMe
     ? cooldown ? "JUST STARTED..." : "I'M DONE"
-    : isOccupied
-      ? `${status!.currentUser} is in there...`
-      : "START SHOWER";
+    : isPendingMe
+      ? "CANCEL"
+      : isOccupied
+        ? `${status!.currentUser} is in there...`
+        : isPending
+          ? `${status!.pendingUser} is about to shower...`
+          : "START SHOWER";
 
   return (
     <motion.button
       className={`brutal-btn w-full py-6 rounded-2xl font-display text-2xl sm:text-3xl tracking-wide ${
         isMe
           ? cooldown ? "bg-gray-300 text-ink" : "bg-coral text-white"
-          : isOccupied
-            ? "bg-gray-200 text-ink"
-            : recentShower ? "bg-sky text-ink" : "bg-lime text-ink"
+          : isPendingMe
+            ? "bg-coral text-white"
+            : isOccupied || isPending
+              ? "bg-gray-200 text-ink"
+              : recentShower ? "bg-sky text-ink" : "bg-lime text-ink"
       }`}
       disabled={!canAct || cooldown}
       onClick={handleClick}
