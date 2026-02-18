@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { adminDb, adminPath } from "@/lib/firebaseAdmin";
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     const key = Buffer.from(subscription.endpoint).toString("base64url");
 
     // Store subscription in Firebase RTDB via Admin SDK
-    await adminDb.ref(`pushSubscriptions/${key}`).set({
+    await adminDb.ref(adminPath(`pushSubscriptions/${key}`)).set({
       subscription,
       user,
       updatedAt: Date.now(),

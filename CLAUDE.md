@@ -163,3 +163,25 @@ tests/
 ```
 
 Firebase is globally mocked in `tests/setup.ts` so tests run without any backend. When adding new tests, follow the existing pattern — mock external dependencies, test pure logic directly.
+
+## Development Workflow (Feature Branch → Preview → Production)
+
+The user works exclusively through Claude Code and does not write code directly.
+
+### Flow
+
+1. **Start**: Create a feature branch off `main` (e.g., `feature/dark-mode`)
+2. **Iterate**: Make changes, commit, and push to the branch. Each push triggers a **Vercel preview deployment**.
+3. **Ship**: When the user says "ship it" / "merge it" / "send to prod":
+   - Merge the feature branch into `main`
+   - Push `main` (triggers **Vercel production deployment**)
+   - Delete the feature branch (local + remote)
+4. **Abort**: If the user says "scrap it" / "nah" — delete the branch, checkout `main`.
+
+### Preview Safety
+
+- Push notifications are **disabled on preview deployments** — the `/api/push-notify` route checks `VERCEL_ENV` and skips sending when not `production`.
+- **Firebase data is isolated by environment** — all app data paths (`status`, `slots`, `log`, `pushSubscriptions`) are prefixed with `preview/` on non-production deployments. Auth paths (`allowedEmails`, `graceUntil`) remain shared.
+  - Client-side: `dbRef(path)` from `lib/firebase.ts` (uses `NEXT_PUBLIC_VERCEL_ENV`)
+  - Server-side: `adminPath(path)` from `lib/firebaseAdmin.ts` (uses `VERCEL_ENV`)
+  - **Always use `dbRef()` for new client-side Firebase refs** (not `ref(db, ...)`), except for auth-related paths in `useAuth.ts`.

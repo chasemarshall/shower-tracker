@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ref, push } from "firebase/database";
-import { db } from "@/lib/firebase";
+import { push } from "firebase/database";
+import { dbRef } from "@/lib/firebase";
 import { DURATIONS } from "@/lib/constants";
 import { getToday } from "@/lib/utils";
 import type { SlotsMap } from "@/lib/types";
@@ -67,7 +67,7 @@ export function ClaimModal({
       }
     }
 
-    push(ref(db, "slots"), {
+    push(dbRef("slots"), {
       user: currentUser,
       date: date,
       startTime: time,

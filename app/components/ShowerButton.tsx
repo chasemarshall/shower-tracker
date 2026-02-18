@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ref, set } from "firebase/database";
-import { db } from "@/lib/firebase";
+import { set } from "firebase/database";
+import { dbRef } from "@/lib/firebase";
 import { MIN_SHOWER_SECONDS } from "@/lib/constants";
 import { getToday } from "@/lib/utils";
 import { sendPushNotification } from "@/lib/notifications";
@@ -72,9 +72,9 @@ export function ShowerButton({
       if (status?.startedAt) onEnd(status.startedAt);
       // Mark the active slot as completed if the user ends their shower early
       if (activeSlot) {
-        set(ref(db, `slots/${activeSlot.id}/completed`), true);
+        set(dbRef(`slots/${activeSlot.id}/completed`), true);
       }
-      set(ref(db, "status"), { currentUser: null, startedAt: null });
+      set(dbRef("status"), { currentUser: null, startedAt: null });
       sendPushNotification({
         title: "\u{1F6BF} SHOWER",
         body: `${currentUser} is done`,
@@ -102,7 +102,7 @@ export function ShowerButton({
       }
     }
 
-    set(ref(db, "status"), { currentUser, startedAt: Date.now() });
+    set(dbRef("status"), { currentUser, startedAt: Date.now() });
     sendPushNotification({
       title: "\u{1F6BF} SHOWER",
       body: `${currentUser} started showering`,
@@ -112,7 +112,7 @@ export function ShowerButton({
 
   const handleExtend = () => {
     if (!activeSlot) return;
-    set(ref(db, `slots/${activeSlot.id}/durationMinutes`), activeSlot.durationMinutes + 5);
+    set(dbRef(`slots/${activeSlot.id}/durationMinutes`), activeSlot.durationMinutes + 5);
   };
 
   const label = isMe

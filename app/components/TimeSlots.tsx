@@ -1,8 +1,8 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { ref, remove } from "firebase/database";
-import { db } from "@/lib/firebase";
+import { remove } from "firebase/database";
+import { dbRef } from "@/lib/firebase";
 import { getToday, formatTimeRange, userColor } from "@/lib/utils";
 import type { Slot, SlotsMap } from "@/lib/types";
 
@@ -59,7 +59,7 @@ export function TimeSlots({
   };
 
   const handleDelete = (id: string) => {
-    remove(ref(db, `slots/${id}`));
+    remove(dbRef(`slots/${id}`));
   };
 
   let colorIndex = 0;

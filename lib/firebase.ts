@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getDatabase } from "firebase/database";
+import { getDatabase, ref as firebaseRef, DatabaseReference } from "firebase/database";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
 const firebaseConfig = {
@@ -16,3 +16,14 @@ const app = initializeApp(firebaseConfig);
 export const db = getDatabase(app);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
+
+/** Prefix for Firebase paths — "preview/" on non-production Vercel deployments, "" otherwise. */
+export const DB_PREFIX =
+  process.env.NEXT_PUBLIC_VERCEL_ENV && process.env.NEXT_PUBLIC_VERCEL_ENV !== "production"
+    ? "preview/"
+    : "";
+
+/** Shorthand for ref(db, prefixedPath). Use for all app data (status, slots, log). */
+export function dbRef(path: string): DatabaseReference {
+  return firebaseRef(db, `${DB_PREFIX}${path}`);
+}

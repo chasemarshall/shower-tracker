@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { db } from "@/lib/firebase";
+import { dbRef } from "@/lib/firebase";
 import { useAuth } from "@/lib/useAuth";
-import { ref, onValue, set, push, remove, query, orderByChild, endAt, get } from "firebase/database";
+import { onValue, push, remove, query, orderByChild, endAt, get } from "firebase/database";
 
 import { TEN_MINUTES_MS, SLOT_ALERT_WINDOW_MS } from "@/lib/constants";
 import { getToday, formatTimeRange, getSlotStartTimestamp, getSlotAlertKey } from "@/lib/utils";
@@ -180,7 +180,7 @@ export default function Home() {
           now <= slotEndTs + 5 * 60 * 1000 &&
           !autoLoggedSlotsRef.current.has(autoLogKey)
         ) {
-          push(ref(db, "log"), {
+          push(dbRef("log"), {
             user: slot.user,
             startedAt: slotStartTs,
             endedAt: slotEndTs,
@@ -222,8 +222,8 @@ export default function Home() {
   useEffect(() => {
     if (!currentUser) return;
 
-    const statusRef = ref(db, "status");
-    const slotsRef = ref(db, "slots");
+    const statusRef = dbRef("status");
+    const slotsRef = dbRef("slots");
 
     const unsubStatus = onValue(statusRef, (snap) => {
       setStatus(snap.val());
@@ -237,7 +237,7 @@ export default function Home() {
       // Ignore listener errors (e.g. Safari private mode).
     });
 
-    const logRef = ref(db, "log");
+    const logRef = dbRef("log");
     const unsubLog = onValue(logRef, (snap) => {
       setLog(snap.val());
     }, () => {
@@ -247,7 +247,7 @@ export default function Home() {
     // Cleanup old log entries (older than 24h)
     const cutoff24h = Date.now() - 24 * 60 * 60 * 1000;
     const oldLogQuery = query(
-      ref(db, "log"),
+      dbRef("log"),
       orderByChild("endedAt"),
       endAt(cutoff24h)
     );
@@ -264,7 +264,7 @@ export default function Home() {
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, "0")}-${String(yesterday.getDate()).padStart(2, "0")}`;
     const oldSlotsQuery = query(
-      ref(db, "slots"),
+      dbRef("slots"),
       orderByChild("date"),
       endAt(yesterdayStr)
     );
@@ -287,7 +287,7 @@ export default function Home() {
     const now = Date.now();
     const durationSeconds = Math.floor((now - startedAt) / 1000);
     if (durationSeconds < 1 || !currentUser) return;
-    push(ref(db, "log"), {
+    push(dbRef("log"), {
       user: currentUser,
       startedAt,
       endedAt: now,

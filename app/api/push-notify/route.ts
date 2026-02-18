@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import webpush from "web-push";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { adminDb, adminPath } from "@/lib/firebaseAdmin";
 
 // Force this route to be dynamic (never pre-rendered at build time)
 export const dynamic = "force-dynamic";
@@ -13,6 +13,10 @@ interface PushRecord {
 
 export async function POST(req: NextRequest) {
   try {
+    if (process.env.VERCEL_ENV && process.env.VERCEL_ENV !== "production") {
+      return NextResponse.json({ sent: 0, skipped: "non-production environment" });
+    }
+
     const vapidPublic = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
     const vapidPrivate = process.env.VAPID_PRIVATE_KEY;
 
@@ -29,7 +33,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Read all push subscriptions from Firebase via Admin SDK
-    const snapshot = await adminDb.ref("pushSubscriptions").once("value");
+    const snapshot = await adminDb.ref(adminPath("pushSubscriptions")).once("value");
     const data: Record<string, PushRecord> | null = snapshot.val();
 
     if (!data) {
@@ -68,7 +72,7 @@ export async function POST(req: NextRequest) {
 
     // Clean up stale subscriptions
     await Promise.allSettled(
-      staleKeys.map((key) => adminDb.ref(`pushSubscriptions/${key}`).remove()),
+      staleKeys.map((key) => adminDb.ref(adminPath(`pushSubscriptions/${key}`)).remove()),
     );
 
     return NextResponse.json({ sent, cleaned: staleKeys.length });

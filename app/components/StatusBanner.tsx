@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { ref, set } from "firebase/database";
-import { db } from "@/lib/firebase";
+import { set } from "firebase/database";
+import { dbRef } from "@/lib/firebase";
 import { AUTO_RELEASE_SECONDS } from "@/lib/constants";
 import { getToday, formatElapsed, formatTimeRange, timeAgo } from "@/lib/utils";
 import { sendPushNotification } from "@/lib/notifications";
@@ -76,7 +76,7 @@ export function StatusBanner({
     if (isMe && elapsed >= AUTO_RELEASE_SECONDS && !autoReleasedRef.current) {
       autoReleasedRef.current = true;
       if (status?.startedAt) onAutoRelease(status.startedAt);
-      set(ref(db, "status"), { currentUser: null, startedAt: null });
+      set(dbRef("status"), { currentUser: null, startedAt: null });
       if (status?.currentUser) {
         sendPushNotification({
           title: "\u{1F6BF} SHOWER",
