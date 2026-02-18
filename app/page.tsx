@@ -895,7 +895,7 @@ function LoginScreen({
   const [verifying, setVerifying] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [code, setCode] = useState("");
-  const [phoneStep, setPhoneStep] = useState<"enter-phone" | "enter-code">("enter-phone");
+  const [phoneStep, setPhoneStep] = useState<"idle" | "enter-phone" | "enter-code">("idle");
   const [phoneLoading, setPhoneLoading] = useState(false);
 
   const handleTurnstileSuccess = async (token: string) => {
@@ -1033,82 +1033,104 @@ function LoginScreen({
 
           <div id="phone-recaptcha-container" />
 
-          <motion.div
-            className="w-full max-w-md flex flex-col gap-3"
-            initial={{ y: 10, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.1 }}
-          >
-            {phoneStep === "enter-phone" ? (
-              <>
-                <input
-                  type="tel"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="+1 555 123 4567"
-                  className="brutal-input w-full rounded-xl"
-                  autoComplete="tel"
-                />
-                <motion.button
-                  className="brutal-btn bg-white px-8 py-5 font-display text-xl rounded-xl flex items-center gap-3"
-                  initial={{ scale: 0.9, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ type: "spring", stiffness: 200 }}
-                  onClick={handleSendPhoneCode}
-                  disabled={phoneLoading || !phoneNumber.trim()}
-                >
-                  <span aria-hidden>📱</span>
-                  {phoneLoading ? "Sending code..." : "Sign in with Phone"}
-                </motion.button>
-              </>
-            ) : (
-              <>
-                <input
-                  type="text"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  placeholder="Enter 6-digit code"
-                  className="brutal-input w-full rounded-xl"
-                  autoComplete="one-time-code"
-                  inputMode="numeric"
-                />
-                <div className="flex gap-2">
-                  <motion.button
-                    className="brutal-btn bg-white px-8 py-5 font-display text-xl rounded-xl flex items-center gap-3"
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ type: "spring", stiffness: 200 }}
-                    onClick={handleConfirmPhoneCode}
-                    disabled={phoneLoading || !code.trim()}
-                  >
-                    <span aria-hidden>🔐</span>
-                    {phoneLoading ? "Verifying..." : "Confirm phone code"}
-                  </motion.button>
+          {phoneStep === "idle" ? (
+            <motion.button
+              className="brutal-btn bg-white px-8 py-5 font-display text-xl rounded-xl flex items-center gap-3"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
+              onClick={() => setPhoneStep("enter-phone")}
+            >
+              <span aria-hidden>📱</span>
+              Sign in with Phone
+            </motion.button>
+          ) : (
+            <motion.div
+              className="w-full max-w-md flex flex-col gap-3"
+              initial={{ y: 10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.1 }}
+            >
+              {phoneStep === "enter-phone" ? (
+                <>
+                  <input
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    placeholder="+1 555 123 4567"
+                    className="brutal-input w-full rounded-xl"
+                    autoComplete="tel"
+                  />
                   <motion.button
                     className="brutal-btn bg-white px-8 py-5 font-display text-xl rounded-xl flex items-center gap-3"
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ type: "spring", stiffness: 200 }}
                     onClick={handleSendPhoneCode}
-                    disabled={phoneLoading}
+                    disabled={phoneLoading || !phoneNumber.trim()}
                   >
-                    <span aria-hidden>🔁</span>
-                    {phoneLoading ? "Sending..." : "Resend code"}
+                    {phoneLoading ? "Sending code..." : "Send Code"}
                   </motion.button>
-                </div>
-                <button
-                  className="font-mono text-xs font-bold uppercase tracking-wider underline self-start"
-                  onClick={() => {
-                    setPhoneStep("enter-phone");
-                    setCode("");
-                  }}
-                  type="button"
-                >
-                  Use a different number
-                </button>
-              </>
-            )}
-          </motion.div>
+                  <button
+                    className="font-mono text-xs font-bold uppercase tracking-wider underline self-start"
+                    onClick={() => {
+                      setPhoneStep("idle");
+                      setPhoneNumber("");
+                    }}
+                    type="button"
+                  >
+                    Back
+                  </button>
+                </>
+              ) : (
+                <>
+                  <input
+                    type="text"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    placeholder="Enter 6-digit code"
+                    className="brutal-input w-full rounded-xl"
+                    autoComplete="one-time-code"
+                    inputMode="numeric"
+                  />
+                  <div className="flex gap-2">
+                    <motion.button
+                      className="brutal-btn bg-white px-8 py-5 font-display text-xl rounded-xl flex items-center gap-3"
+                      initial={{ scale: 0.9, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ type: "spring", stiffness: 200 }}
+                      onClick={handleConfirmPhoneCode}
+                      disabled={phoneLoading || !code.trim()}
+                    >
+                      <span aria-hidden>🔐</span>
+                      {phoneLoading ? "Verifying..." : "Confirm Code"}
+                    </motion.button>
+                    <motion.button
+                      className="brutal-btn bg-white px-8 py-5 font-display text-xl rounded-xl flex items-center gap-3"
+                      initial={{ scale: 0.9, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ type: "spring", stiffness: 200 }}
+                      onClick={handleSendPhoneCode}
+                      disabled={phoneLoading}
+                    >
+                      <span aria-hidden>🔁</span>
+                      {phoneLoading ? "Sending..." : "Resend"}
+                    </motion.button>
+                  </div>
+                  <button
+                    className="font-mono text-xs font-bold uppercase tracking-wider underline self-start"
+                    onClick={() => {
+                      setPhoneStep("enter-phone");
+                      setCode("");
+                    }}
+                    type="button"
+                  >
+                    Use a different number
+                  </button>
+                </>
+              )}
+            </motion.div>
+          )
         </>
       )}
 
