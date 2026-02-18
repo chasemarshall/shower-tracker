@@ -444,19 +444,19 @@ function ShowerButton({
     return (
       <div className="flex gap-2 w-full">
         <motion.button
-          className="brutal-btn py-6 px-4 rounded-2xl font-display text-xl sm:text-2xl tracking-wide bg-yolk text-ink shrink-0"
-          onClick={handleExtend}
-          whileTap={{ scale: 0.95 }}
-        >
-          +5m
-        </motion.button>
-        <motion.button
           className={`${btnClass} flex-1 min-w-0`}
           disabled={!canAct}
           onClick={handleClick}
           whileTap={canAct ? { scale: 0.97 } : undefined}
         >
           {label}
+        </motion.button>
+        <motion.button
+          className="brutal-btn py-6 px-4 rounded-2xl font-display text-xl sm:text-2xl tracking-wide bg-yolk text-ink shrink-0"
+          onClick={handleExtend}
+          whileTap={{ scale: 0.95 }}
+        >
+          +5m
         </motion.button>
       </div>
     );
