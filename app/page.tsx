@@ -93,12 +93,18 @@ export default function Home() {
     }
   }, []);
 
-  // Re-subscribe to push when user changes
+  // Re-subscribe to push when user or auth state changes.
   useEffect(() => {
-    if (currentUser && typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+    if (
+      authUser &&
+      currentUser &&
+      typeof window !== "undefined" &&
+      "Notification" in window &&
+      Notification.permission === "granted"
+    ) {
       subscribeToPush(currentUser);
     }
-  }, [currentUser]);
+  }, [authUser, currentUser]);
 
   useEffect(() => {
     if (!currentUser || !slots) return;

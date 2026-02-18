@@ -1,3 +1,5 @@
+import { auth } from "@/lib/firebase";
+
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
@@ -27,9 +29,13 @@ export async function subscribeToPush(user: string) {
     }
 
     // Store subscription on the server
+    const idToken = await auth.currentUser?.getIdToken();
     await fetch("/api/push-subscribe", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
+      },
       body: JSON.stringify({ subscription: subscription.toJSON(), user }),
     });
   } catch {
@@ -49,9 +55,13 @@ export async function sendPushNotification({
   targetUsers?: string[];
 }) {
   try {
+    const idToken = await auth.currentUser?.getIdToken();
     await fetch("/api/push-notify", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
+      },
       body: JSON.stringify({ title, body, excludeUser, targetUsers }),
     });
   } catch {

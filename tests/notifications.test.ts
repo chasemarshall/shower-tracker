@@ -1,9 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { sendPushNotification } from "@/lib/notifications";
+import { auth } from "@/lib/firebase";
+
+type AuthLike = {
+  currentUser?: {
+    getIdToken: () => Promise<string>;
+  } | null;
+};
 
 describe("sendPushNotification", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    (auth as AuthLike).currentUser = null;
   });
 
   it("calls fetch with correct payload", async () => {
@@ -37,6 +45,33 @@ describe("sendPushNotification", () => {
 
     const callBody = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
     expect(callBody.targetUsers).toEqual(["Dad", "Mom"]);
+  });
+
+  it("adds authorization header when token is available", async () => {
+    const authMock = auth as AuthLike;
+    authMock.currentUser = {
+      getIdToken: vi.fn().mockResolvedValue("token-123"),
+    };
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("ok"));
+
+    await sendPushNotification({
+      title: "Secure",
+      body: "Secure body",
+    });
+
+    expect(fetchSpy).toHaveBeenCalledWith("/api/push-notify", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer token-123",
+      },
+      body: JSON.stringify({
+        title: "Secure",
+        body: "Secure body",
+        excludeUser: undefined,
+        targetUsers: undefined,
+      }),
+    });
   });
 
   it("does not throw on fetch failure", async () => {
