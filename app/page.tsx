@@ -653,6 +653,8 @@ function ClaimModal({
       startTime: time,
       durationMinutes: duration,
       ...(recurring ? { recurring: true } : {}),
+    }).catch((err) => {
+      console.error("Failed to save slot:", err);
     });
 
     onClose();
