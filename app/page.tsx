@@ -9,8 +9,8 @@ import { ref, onValue, set, push, remove, query, orderByChild, endAt, get } from
 
 const USERS = ["Chase", "Livia", "A.J.", "Dad", "Mom"];
 const USER_COLORS: Record<string, string> = {
-  "Chase": "bg-lime",
-  "Livia": "bg-sky",
+  "Chase": "bg-sky",
+  "Livia": "bg-lime",
   "A.J.": "bg-yolk",
   "Dad": "bg-bubblegum",
   "Mom": "bg-mint",
