@@ -8,7 +8,13 @@ import Turnstile from "react-turnstile";
 import { ref, onValue, set, push, remove, query, orderByChild, endAt, get } from "firebase/database";
 
 const USERS = ["Chase", "Livia", "A.J.", "Dad", "Mom"];
-const SLOT_COLORS = ["slot-yolk", "slot-mint", "slot-sky", "slot-bubblegum"];
+const USER_COLORS: Record<string, string> = {
+  "Chase": "bg-lime",
+  "Livia": "bg-sky",
+  "A.J.": "bg-yolk",
+  "Dad": "bg-bubblegum",
+  "Mom": "bg-mint",
+};
 const DURATIONS = [15, 20, 30, 45, 60];
 const AUTO_RELEASE_SECONDS = 2700;
 const MIN_SHOWER_SECONDS = 5;
@@ -99,7 +105,7 @@ function clearPersistedUser() {
 // USER SELECT SCREEN
 // ============================================================
 function UserSelectScreen({ onSelect }: { onSelect: (name: string) => void }) {
-  const colors = ["bg-lime", "bg-sky", "bg-yolk", "bg-bubblegum", "bg-mint"];
+  const colors = USERS.map((name) => USER_COLORS[name] || "bg-white");
 
   return (
     <motion.div
@@ -372,11 +378,8 @@ function ShowerButton({
 // ============================================================
 // SHOWER LOG (last 24 hours)
 // ============================================================
-const LOG_COLORS = ["bg-sky", "bg-yolk", "bg-mint", "bg-bubblegum", "bg-coral"];
-
 function userColor(name: string): string {
-  const idx = USERS.indexOf(name);
-  return LOG_COLORS[idx >= 0 ? idx % LOG_COLORS.length : 0];
+  return USER_COLORS[name] || "bg-white";
 }
 
 function formatLogTime(ts: number): string {
@@ -575,7 +578,7 @@ function TimeSlots({
                     return (
                       <motion.div
                         key={id}
-                        className={`brutal-card-sm ${SLOT_COLORS[ci % SLOT_COLORS.length]} rounded-xl p-4 flex items-center justify-between mb-3${past ? " opacity-50" : ""}`}
+                        className={`brutal-card-sm ${userColor(slot.user)} rounded-xl p-4 flex items-center justify-between mb-3${past ? " opacity-50" : ""}`}
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: past ? 0.5 : 1, x: 0 }}
                         exit={{ opacity: 0, x: 20, scale: 0.9 }}
