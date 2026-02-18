@@ -33,6 +33,7 @@ interface Slot {
   startTime: string;
   durationMinutes: number;
   recurring?: boolean;
+  completed?: boolean;
 }
 
 interface SlotsMap {
@@ -215,7 +216,7 @@ function StatusBanner({
     const now = Date.now();
     const today = getToday();
     for (const slot of Object.values(slots)) {
-      if (slot.date !== today) continue;
+      if (slot.date !== today || slot.completed) continue;
       const [h, m] = slot.startTime.split(":").map(Number);
       const slotStart = new Date();
       slotStart.setHours(h, m, 0, 0);
@@ -361,6 +362,10 @@ function ShowerButton({
 
     if (isMe) {
       if (status?.startedAt) onEnd(status.startedAt);
+      // Mark the active slot as completed if the user ends their shower early
+      if (activeSlot) {
+        set(ref(db, `slots/${activeSlot.id}/completed`), true);
+      }
       set(ref(db, "status"), { currentUser: null, startedAt: null });
       sendPushNotification({
         title: "🚿 SHOWER",
@@ -602,6 +607,7 @@ function TimeSlots({
   const sortedDates = [...slotsByDate.keys()].sort();
 
   const isSlotPast = (slot: Slot) => {
+    if (slot.completed) return true;
     if (slot.date > today) return false;
     const [h, m] = slot.startTime.split(":").map(Number);
     const end = new Date();
@@ -1410,10 +1416,11 @@ export default function Home() {
           sentSlotNotificationsRef.current.add(othersStartKey);
         }
 
-        // Auto-log shower when slot ends
+        // Auto-log shower when slot ends (skip if already completed early)
         const autoLogKey = `${slotId}:auto-log`;
         const slotEndTs = slotStartTs + slot.durationMinutes * 60 * 1000;
         if (
+          !slot.completed &&
           now >= slotEndTs &&
           now <= slotEndTs + 5 * 60 * 1000 &&
           !autoLoggedSlotsRef.current.has(autoLogKey)
