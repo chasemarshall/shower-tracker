@@ -70,15 +70,6 @@ export function useAuth(): AuthState {
     }
   }, []);
 
-  const createPhoneVerifier = useCallback(() => {
-    if (!recaptchaVerifierRef.current) {
-      recaptchaVerifierRef.current = new RecaptchaVerifier(auth, "phone-recaptcha-container", {
-        size: "invisible",
-      });
-    }
-    return recaptchaVerifierRef.current;
-  }, []);
-
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
@@ -144,11 +135,22 @@ export function useAuth(): AuthState {
   const sendPhoneCode = useCallback(async (phoneNumber: string) => {
     setError(null);
     try {
-      const verifier = createPhoneVerifier();
+      // Clear any previous verifier to avoid stale state
+      if (recaptchaVerifierRef.current) {
+        recaptchaVerifierRef.current.clear();
+        recaptchaVerifierRef.current = null;
+      }
+      const verifier = new RecaptchaVerifier(auth, "phone-recaptcha-container", {
+        size: "invisible",
+      });
+      recaptchaVerifierRef.current = verifier;
+      // Render the reCAPTCHA widget before verifying
+      await verifier.render();
       const provider = new PhoneAuthProvider(auth);
       const verificationId = await provider.verifyPhoneNumber(phoneNumber, verifier);
       phoneVerificationIdRef.current = verificationId;
     } catch (err) {
+      console.error("Phone auth error:", err);
       const authCode = (err as AuthError)?.code;
       if (authCode === "auth/too-many-requests") {
         setError("Too many attempts. Please try again later.");
@@ -158,7 +160,7 @@ export function useAuth(): AuthState {
       clearPhoneAuthState();
       throw err;
     }
-  }, [clearPhoneAuthState, createPhoneVerifier]);
+  }, [clearPhoneAuthState]);
 
   const confirmPhoneCode = useCallback(async (code: string) => {
     setError(null);
