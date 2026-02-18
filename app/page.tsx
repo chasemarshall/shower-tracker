@@ -46,13 +46,13 @@ export default function Home() {
     try {
       const result = await Notification.requestPermission();
       setNotifPermission(result);
-      if (result === "granted" && currentUser) {
+      if (result === "granted" && authUser && currentUser) {
         await subscribeToPush(currentUser);
       }
     } catch {
       // Ignore permission failures.
     }
-  }, [currentUser]);
+  }, [authUser, currentUser]);
 
   // Load user from localStorage + register SW + request notification permission
   useEffect(() => {
@@ -80,25 +80,26 @@ export default function Home() {
           try {
             const result = await Notification.requestPermission();
             setNotifPermission(result);
-            if (result === "granted" && savedUser) {
-              await subscribeToPush(savedUser);
-            }
           } catch {
             // Ignore permission/subscription failures.
           }
         })();
-      } else if (Notification.permission === "granted" && savedUser) {
-        subscribeToPush(savedUser);
       }
     }
   }, []);
 
-  // Re-subscribe to push when user changes
+  // Re-subscribe to push when user or auth state changes.
   useEffect(() => {
-    if (currentUser && typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+    if (
+      authUser &&
+      currentUser &&
+      typeof window !== "undefined" &&
+      "Notification" in window &&
+      Notification.permission === "granted"
+    ) {
       subscribeToPush(currentUser);
     }
-  }, [currentUser]);
+  }, [authUser, currentUser]);
 
   useEffect(() => {
     if (!currentUser || !slots) return;

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import webpush from "web-push";
 import { adminDb, adminPath } from "@/lib/firebaseAdmin";
+import { requireAuthorizedRequest } from "@/lib/apiAuth";
 
 // Force this route to be dynamic (never pre-rendered at build time)
 export const dynamic = "force-dynamic";
@@ -13,6 +14,11 @@ interface PushRecord {
 
 export async function POST(req: NextRequest) {
   try {
+    const authResult = await requireAuthorizedRequest(req);
+    if (!authResult.ok) {
+      return authResult.response;
+    }
+
     if (process.env.VERCEL_ENV && process.env.VERCEL_ENV !== "production") {
       return NextResponse.json({ sent: 0, skipped: "non-production environment" });
     }

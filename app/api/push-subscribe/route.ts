@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb, adminPath } from "@/lib/firebaseAdmin";
+import { requireAuthorizedRequest } from "@/lib/apiAuth";
 
 export async function POST(req: NextRequest) {
   try {
+    const authResult = await requireAuthorizedRequest(req);
+    if (!authResult.ok) {
+      return authResult.response;
+    }
+
     const { subscription, user } = await req.json();
 
-    if (!subscription || !user) {
+    if (!subscription || typeof subscription.endpoint !== "string" || !user) {
       return NextResponse.json({ error: "Missing subscription or user" }, { status: 400 });
     }
 
