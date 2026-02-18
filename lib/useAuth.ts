@@ -3,10 +3,14 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   onAuthStateChanged,
+  PhoneAuthProvider,
+  RecaptchaVerifier,
+  signInWithCredential,
   signInWithPopup,
   signInWithRedirect,
   signOut as firebaseSignOut,
   User,
+  AuthError,
 } from "firebase/auth";
 import { ref, get, set } from "firebase/database";
 import { auth, googleProvider, db } from "./firebase";
@@ -16,8 +20,13 @@ interface AuthState {
   loading: boolean;
   error: string | null;
   signIn: () => Promise<void>;
+  sendPhoneCode: (phoneNumber: string) => Promise<void>;
+  confirmPhoneCode: (code: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
+
+let phoneVerificationId: string | null = null;
+let recaptchaVerifier: RecaptchaVerifier | null = null;
 
 async function checkAndWhitelistEmail(
   email: string
@@ -51,6 +60,44 @@ async function checkAndWhitelistEmail(
   return { allowed: false };
 }
 
+async function checkAndWhitelistPhone(
+  phoneNumber: string
+): Promise<{ allowed: boolean }> {
+  const snap = await get(ref(db, "allowedPhoneNumbers"));
+  const existing: string[] = [];
+  if (snap.exists()) {
+    const data = snap.val();
+    if (Array.isArray(data)) {
+      existing.push(...data);
+    } else {
+      existing.push(...(Object.values(data) as string[]));
+    }
+  }
+
+  if (existing.includes(phoneNumber)) return { allowed: true };
+
+  const graceSnap = await get(ref(db, "graceUntil"));
+  if (graceSnap.exists()) {
+    const graceUntil = graceSnap.val() as number;
+    if (Date.now() < graceUntil) {
+      existing.push(phoneNumber);
+      await set(ref(db, "allowedPhoneNumbers"), existing);
+      return { allowed: true };
+    }
+  }
+
+  return { allowed: false };
+}
+
+function getOrCreateRecaptchaVerifier() {
+  if (!recaptchaVerifier) {
+    recaptchaVerifier = new RecaptchaVerifier(auth, "phone-recaptcha-container", {
+      size: "invisible",
+    });
+  }
+  return recaptchaVerifier;
+}
+
 export function useAuth(): AuthState {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -61,11 +108,18 @@ export function useAuth(): AuthState {
       if (firebaseUser) {
         // Verify email is whitelisted
         try {
-          const { allowed } = await checkAndWhitelistEmail(firebaseUser.email ?? "");
+          const email = firebaseUser.email ?? "";
+          const phoneNumber = firebaseUser.phoneNumber ?? "";
+          const check = email
+            ? checkAndWhitelistEmail(email)
+            : phoneNumber
+              ? checkAndWhitelistPhone(phoneNumber)
+              : Promise.resolve({ allowed: false });
+          const { allowed } = await check;
           if (!allowed) {
             await firebaseSignOut(auth);
             setUser(null);
-            setError("Access denied. Your email is not on the approved list.");
+            setError("Access denied. Your account is not on the approved list.");
           } else {
             setUser(firebaseUser);
             setError(null);
@@ -112,5 +166,40 @@ export function useAuth(): AuthState {
     await firebaseSignOut(auth);
   }, []);
 
-  return { user, loading, error, signIn, signOut };
+  const sendPhoneCode = useCallback(async (phoneNumber: string) => {
+    setError(null);
+    try {
+      const verifier = getOrCreateRecaptchaVerifier();
+      const provider = new PhoneAuthProvider(auth);
+      const verificationId = await provider.verifyPhoneNumber(phoneNumber, verifier);
+      phoneVerificationId = verificationId;
+    } catch (err) {
+      const code = (err as AuthError)?.code;
+      if (code === "auth/too-many-requests") {
+        setError("Too many attempts. Please try again later.");
+      } else {
+        setError("Could not send code. Check the phone number and try again.");
+      }
+      throw err;
+    }
+  }, []);
+
+  const confirmPhoneCode = useCallback(async (code: string) => {
+    setError(null);
+    if (!phoneVerificationId) {
+      setError("Please request a verification code first.");
+      throw new Error("Missing verification ID");
+    }
+
+    try {
+      const credential = PhoneAuthProvider.credential(phoneVerificationId, code);
+      await signInWithCredential(auth, credential);
+      phoneVerificationId = null;
+    } catch {
+      setError("Invalid code. Please try again.");
+      throw new Error("Invalid verification code");
+    }
+  }, []);
+
+  return { user, loading, error, signIn, sendPhoneCode, confirmPhoneCode, signOut };
 }
