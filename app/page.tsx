@@ -188,10 +188,12 @@ function UserSelectScreen({ onSelect }: { onSelect: (name: string) => void }) {
 function StatusBanner({
   status,
   currentUser,
+  log,
   onAutoRelease,
 }: {
   status: ShowerStatus | null;
   currentUser: string;
+  log: LogMap | null;
   onAutoRelease: (startedAt: number) => void;
 }) {
   const [elapsed, setElapsed] = useState(0);
@@ -200,6 +202,10 @@ function StatusBanner({
 
   const isOccupied = status?.currentUser != null;
   const isMe = status?.currentUser === currentUser;
+
+  const recentShower = !isOccupied && log
+    ? Object.values(log).find((entry) => Date.now() - entry.endedAt < 30 * 60 * 1000)
+    : null;
 
   useEffect(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
@@ -240,7 +246,7 @@ function StatusBanner({
   return (
     <motion.div
       className={`brutal-card rounded-2xl p-6 sm:p-8 text-center ${
-        isOccupied ? "bg-coral pulse-occupied" : "bg-lime"
+        isOccupied ? "bg-coral pulse-occupied" : recentShower ? "bg-sky" : "bg-lime"
       }`}
       layout
       animate={{ scale: isOccupied ? [1, 1.01, 1] : 1 }}
@@ -253,6 +259,14 @@ function StatusBanner({
               Occupied
             </span>
             {status!.currentUser} is showering
+          </>
+        ) : recentShower ? (
+          <>
+            <span className="block text-6xl sm:text-7xl mb-2">🧊</span>
+            Shower Free
+            <span className="block text-sm font-mono font-bold mt-2 uppercase tracking-widest">
+              Hot water may be low — {recentShower.user} showered {timeAgo(recentShower.endedAt)}
+            </span>
           </>
         ) : (
           <>
@@ -1095,6 +1109,7 @@ export default function Home() {
   const [loaded, setLoaded] = useState(false);
   const [notifPermission, setNotifPermission] = useState<NotificationPermission | "unsupported">("unsupported");
   const sentSlotNotificationsRef = useRef<Set<string>>(new Set());
+  const autoLoggedSlotsRef = useRef<Set<string>>(new Set());
 
   // Request notification permission (called from button tap on iOS, or auto on other browsers)
   const requestNotifPermission = useCallback(async () => {
@@ -1224,9 +1239,27 @@ export default function Home() {
           });
           sentSlotNotificationsRef.current.add(othersStartKey);
         }
+
+        // Auto-log shower when slot ends
+        const autoLogKey = `${slotId}:auto-log`;
+        const slotEndTs = slotStartTs + slot.durationMinutes * 60 * 1000;
+        if (
+          now >= slotEndTs &&
+          now <= slotEndTs + 5 * 60 * 1000 &&
+          !autoLoggedSlotsRef.current.has(autoLogKey)
+        ) {
+          push(ref(db, "log"), {
+            user: slot.user,
+            startedAt: slotStartTs,
+            endedAt: slotEndTs,
+            durationSeconds: slot.durationMinutes * 60,
+          });
+          autoLoggedSlotsRef.current.add(autoLogKey);
+        }
       }
 
       const validKeys = new Set<string>();
+      const validAutoLogKeys = new Set<string>();
       for (const [slotId, slot] of Object.entries(slots)) {
         const slotStartTs = getSlotStartTimestamp(slot);
         if (slotStartTs >= now - 5 * 60 * 1000) {
@@ -1235,9 +1268,16 @@ export default function Home() {
           validKeys.add(getSlotAlertKey(slotId, "others-ten"));
           validKeys.add(getSlotAlertKey(slotId, "others-start"));
         }
+        const slotEndTs = slotStartTs + slot.durationMinutes * 60 * 1000;
+        if (slotEndTs >= now - 5 * 60 * 1000) {
+          validAutoLogKeys.add(`${slotId}:auto-log`);
+        }
       }
       sentSlotNotificationsRef.current = new Set(
         [...sentSlotNotificationsRef.current].filter((key) => validKeys.has(key)),
+      );
+      autoLoggedSlotsRef.current = new Set(
+        [...autoLoggedSlotsRef.current].filter((key) => validAutoLogKeys.has(key)),
       );
     };
 
@@ -1411,7 +1451,7 @@ export default function Home() {
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.3 }}
             >
-              <StatusBanner status={status} currentUser={currentUser} onAutoRelease={logShower} />
+              <StatusBanner status={status} currentUser={currentUser} log={log} onAutoRelease={logShower} />
             </motion.div>
 
             {/* Shower button */}
