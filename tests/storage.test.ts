@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, afterEach, beforeEach, vi } from "vitest";
 import { getPersistedUser, persistUser, clearPersistedUser } from "@/lib/storage";
 
 describe("storage", () => {
@@ -39,12 +39,15 @@ describe("storage", () => {
   });
 
   describe("error handling", () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
     it("handles localStorage errors gracefully in getPersistedUser", () => {
       vi.spyOn(localStorage, "getItem").mockImplementation(() => {
         throw new Error("QuotaExceededError");
       });
       expect(getPersistedUser()).toBeNull();
-      vi.restoreAllMocks();
     });
 
     it("handles localStorage errors gracefully in persistUser", () => {
@@ -53,7 +56,6 @@ describe("storage", () => {
       });
       // Should not throw
       expect(() => persistUser("Chase")).not.toThrow();
-      vi.restoreAllMocks();
     });
 
     it("handles localStorage errors gracefully in clearPersistedUser", () => {
@@ -61,7 +63,6 @@ describe("storage", () => {
         throw new Error("SecurityError");
       });
       expect(() => clearPersistedUser()).not.toThrow();
-      vi.restoreAllMocks();
     });
   });
 });

@@ -44,6 +44,10 @@ const ALLOWLIST_CACHE_TTL_MS = 60_000;
 type AllowlistEntry = { emails: Set<string>; expiresAt: number };
 const allowlistCache = new Map<string, AllowlistEntry>();
 
+export function resetAllowedEmailsCache(): void {
+  allowlistCache.clear();
+}
+
 async function isAllowlistedEmail(email: string): Promise<boolean> {
   try {
     const now = Date.now();

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 const mocks = vi.hoisted(() => {
@@ -48,6 +48,7 @@ vi.mock("web-push", () => ({
 
 import { POST as pushSubscribePost } from "@/app/api/push-subscribe/route";
 import { POST as pushNotifyPost } from "@/app/api/push-notify/route";
+import { resetAllowedEmailsCache } from "@/lib/apiAuth";
 
 function createSnapshot(value: unknown) {
   return {
@@ -70,9 +71,10 @@ function buildRequest(url: string, body: unknown, token?: string): NextRequest {
 describe("push route auth", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.VERCEL_ENV = "production";
-    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY = "test-public";
-    process.env.VAPID_PRIVATE_KEY = "test-private";
+    resetAllowedEmailsCache();
+    vi.stubEnv("VERCEL_ENV", "production");
+    vi.stubEnv("NEXT_PUBLIC_VAPID_PUBLIC_KEY", "test-public");
+    vi.stubEnv("VAPID_PRIVATE_KEY", "test-private");
 
     mocks.verifyIdToken.mockResolvedValue({ email: "allowed@example.com" });
     mocks.once.mockImplementation(async (path: string) => {
@@ -89,6 +91,10 @@ describe("push route auth", () => {
     mocks.set.mockResolvedValue(undefined);
     mocks.remove.mockResolvedValue(undefined);
     mocks.sendNotification.mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it("returns 401 for push-subscribe without bearer token", async () => {
@@ -183,10 +189,8 @@ describe("push route auth", () => {
       "valid-token",
     );
 
-    const [subscribeRes, notifyRes] = await Promise.all([
-      pushSubscribePost(subscribeReq),
-      pushNotifyPost(notifyReq),
-    ]);
+    const subscribeRes = await pushSubscribePost(subscribeReq);
+    const notifyRes = await pushNotifyPost(notifyReq);
 
     expect(subscribeRes.status).toBe(403);
     expect(notifyRes.status).toBe(403);

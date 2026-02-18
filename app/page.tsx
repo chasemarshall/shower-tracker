@@ -46,13 +46,13 @@ export default function Home() {
     try {
       const result = await Notification.requestPermission();
       setNotifPermission(result);
-      if (result === "granted" && currentUser) {
+      if (result === "granted" && authUser && currentUser) {
         await subscribeToPush(currentUser);
       }
     } catch {
       // Ignore permission failures.
     }
-  }, [currentUser]);
+  }, [authUser, currentUser]);
 
   // Load user from localStorage + register SW + request notification permission
   useEffect(() => {
