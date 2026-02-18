@@ -370,21 +370,69 @@ function ShowerButton({
     });
   };
 
+  // Find the active slot for the current user (if their shower overlaps a booked slot)
+  const activeSlot = (() => {
+    if (!isMe || !slots || !status?.startedAt) return null;
+    const now = Date.now();
+    const today = getToday();
+    for (const [id, slot] of Object.entries(slots)) {
+      if (slot.user !== currentUser || slot.date !== today) continue;
+      const [h, m] = slot.startTime.split(":").map(Number);
+      const slotStart = new Date();
+      slotStart.setHours(h, m, 0, 0);
+      const slotEnd = slotStart.getTime() + slot.durationMinutes * 60 * 1000;
+      // Shower started within 10 minutes of slot start through slot end
+      if (status.startedAt >= slotStart.getTime() - 10 * 60 * 1000 && now <= slotEnd + 10 * 60 * 1000) {
+        return { id, ...slot };
+      }
+    }
+    return null;
+  })();
+
+  const handleExtend = () => {
+    if (!activeSlot) return;
+    set(ref(db, `slots/${activeSlot.id}/durationMinutes`), activeSlot.durationMinutes + 5);
+  };
+
   const label = isMe
     ? cooldown ? "JUST STARTED..." : "I'M DONE"
     : isOccupied
       ? `${status!.currentUser} is in there...`
       : "START SHOWER";
 
+  const btnClass = `brutal-btn py-6 rounded-2xl font-display text-2xl sm:text-3xl tracking-wide ${
+    isMe
+      ? cooldown ? "bg-gray-300 text-ink" : "bg-coral text-white"
+      : isOccupied
+        ? "bg-gray-200 text-ink"
+        : recentShower ? "bg-sky text-ink" : "bg-lime text-ink"
+  }`;
+
+  if (activeSlot && !cooldown) {
+    return (
+      <div className="flex gap-2 w-full">
+        <motion.button
+          className="brutal-btn py-6 px-4 rounded-2xl font-display text-xl sm:text-2xl tracking-wide bg-yolk text-ink shrink-0"
+          onClick={handleExtend}
+          whileTap={{ scale: 0.95 }}
+        >
+          +5m
+        </motion.button>
+        <motion.button
+          className={`${btnClass} flex-1 min-w-0`}
+          disabled={!canAct}
+          onClick={handleClick}
+          whileTap={canAct ? { scale: 0.97 } : undefined}
+        >
+          {label}
+        </motion.button>
+      </div>
+    );
+  }
+
   return (
     <motion.button
-      className={`brutal-btn w-full py-6 rounded-2xl font-display text-2xl sm:text-3xl tracking-wide ${
-        isMe
-          ? cooldown ? "bg-gray-300 text-ink" : "bg-coral text-white"
-          : isOccupied
-            ? "bg-gray-200 text-ink"
-            : recentShower ? "bg-sky text-ink" : "bg-lime text-ink"
-      }`}
+      className={`${btnClass} w-full`}
       disabled={!canAct || cooldown}
       onClick={handleClick}
       whileTap={canAct && !cooldown ? { scale: 0.97 } : undefined}
