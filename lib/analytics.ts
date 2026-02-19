@@ -65,7 +65,9 @@ export function computeLeaderboard(log: LogMap): {
     durations[u].count += 1;
     if (!hours[u]) hours[u] = { sum: 0, count: 0 };
     const d = new Date(entry.startedAt);
-    hours[u].sum += d.getHours() + d.getMinutes() / 60;
+    const rawHour = d.getHours() + d.getMinutes() / 60;
+    // Treat midnight–5am as "late night" (shift +24) so 2am = 26, not 2
+    hours[u].sum += rawHour < 5 ? rawHour + 24 : rawHour;
     hours[u].count += 1;
   }
 
@@ -90,7 +92,7 @@ export function computeLeaderboard(log: LogMap): {
   return {
     mostShowers: { user: mostShowers, count: counts[mostShowers] },
     longestAvg: { user: longestAvg, minutes: Math.round(durations[longestAvg].sum / durations[longestAvg].count / 60) },
-    earlyBird: { user: earlyBird, avgHour: Math.round((hours[earlyBird].sum / hours[earlyBird].count) * 10) / 10 },
-    nightOwl: { user: nightOwl, avgHour: Math.round((hours[nightOwl].sum / hours[nightOwl].count) * 10) / 10 },
+    earlyBird: { user: earlyBird, avgHour: Math.round(((hours[earlyBird].sum / hours[earlyBird].count) % 24) * 10) / 10 },
+    nightOwl: { user: nightOwl, avgHour: Math.round(((hours[nightOwl].sum / hours[nightOwl].count) % 24) * 10) / 10 },
   };
 }

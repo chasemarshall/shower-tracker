@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { USER_COLORS } from "@/lib/constants";
 import {
   computePeakHours,
@@ -23,6 +23,7 @@ interface ShowerAnalyticsProps {
 }
 
 export function ShowerAnalytics({ logHistory, getAuthToken }: ShowerAnalyticsProps) {
+  const [expanded, setExpanded] = useState(false);
   const [aiInsights, setAiInsights] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
@@ -64,24 +65,48 @@ export function ShowerAnalytics({ logHistory, getAuthToken }: ShowerAnalyticsPro
 
   return (
     <div>
-      {/* Section Header */}
-      <div className="flex items-center justify-between mb-4">
+      {/* Section Header — tap to expand/collapse */}
+      <motion.button
+        className="brutal-btn bg-white w-full px-4 py-3 rounded-xl flex items-center justify-between"
+        onClick={() => setExpanded((v) => !v)}
+        whileTap={{ scale: 0.97 }}
+      >
         <h2 className="font-display text-xl uppercase">Analytics</h2>
-        <div className="brutal-card-sm bg-white px-3 py-1 rounded-lg">
-          <span className="font-mono text-sm font-bold">30d</span>
+        <div className="flex items-center gap-2">
+          <div className="brutal-card-sm bg-paper px-3 py-1 rounded-lg">
+            <span className="font-mono text-sm font-bold">30d</span>
+          </div>
+          <motion.span
+            className="font-display text-lg"
+            animate={{ rotate: expanded ? 180 : 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+          >
+            ▼
+          </motion.span>
         </div>
-      </div>
+      </motion.button>
+
+      <AnimatePresence initial={false}>
+      {expanded && (
+      <motion.div
+        key="analytics-content"
+        initial={{ height: 0, opacity: 0 }}
+        animate={{ height: "auto", opacity: 1 }}
+        exit={{ height: 0, opacity: 0 }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        style={{ overflow: "hidden" }}
+      >
 
       {/* Empty State */}
       {!stats ? (
-        <div className="brutal-card-sm bg-white rounded-xl p-6 text-center">
+        <div className="brutal-card-sm bg-white rounded-xl p-6 text-center mt-4">
           <p className="font-mono text-sm text-gray-500 uppercase tracking-wider">
             No shower data yet
           </p>
           <p className="text-3xl mt-2">📊</p>
         </div>
       ) : (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6 mt-4">
           {/* Avg Duration Cards */}
           <motion.div
             initial={{ y: 20, opacity: 0 }}
@@ -310,6 +335,10 @@ export function ShowerAnalytics({ logHistory, getAuthToken }: ShowerAnalyticsPro
           </motion.div>
         </div>
       )}
+
+      </motion.div>
+      )}
+      </AnimatePresence>
     </div>
   );
 }

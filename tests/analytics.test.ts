@@ -54,6 +54,16 @@ describe("computeLeaderboard", () => {
     expect(result.nightOwl.user).toBe("Mom");
   });
 
+  it("treats early morning hours (before 5am) as night owl, not early bird", () => {
+    const lateNightLog: LogMap = {
+      a: { user: "A.J.", startedAt: new Date("2026-02-17T02:00:00").getTime(), endedAt: new Date("2026-02-17T02:15:00").getTime(), durationSeconds: 900 },
+      b: { user: "Chase", startedAt: new Date("2026-02-17T06:30:00").getTime(), endedAt: new Date("2026-02-17T06:45:00").getTime(), durationSeconds: 900 },
+    };
+    const result = computeLeaderboard(lateNightLog);
+    expect(result.earlyBird.user).toBe("Chase"); // 6:30am is early bird
+    expect(result.nightOwl.user).toBe("A.J.");   // 2am is night owl, not early bird
+  });
+
   it("handles empty log without crashing", () => {
     const result = computeLeaderboard({});
     expect(result.mostShowers.user).toBe("-");
