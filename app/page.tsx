@@ -34,6 +34,7 @@ export default function Home() {
   const [status, setStatus] = useState<ShowerStatus | null>(null);
   const [slots, setSlots] = useState<SlotsMap | null>(null);
   const [log, setLog] = useState<LogMap | null>(null);
+  const [logHistory, setLogHistory] = useState<LogMap | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [notifPermission, setNotifPermission] = useState<NotificationPermission | "unsupported">("unsupported");
@@ -181,12 +182,14 @@ export default function Home() {
           now <= slotEndTs + 5 * 60 * 1000 &&
           !autoLoggedSlotsRef.current.has(autoLogKey)
         ) {
-          push(dbRef("log"), {
+          const entry = {
             user: slot.user,
             startedAt: slotStartTs,
             endedAt: slotEndTs,
             durationSeconds: slot.durationMinutes * 60,
-          });
+          };
+          push(dbRef("log"), entry);
+          push(dbRef("logHistory"), entry);
           autoLoggedSlotsRef.current.add(autoLogKey);
         }
       }
@@ -245,6 +248,11 @@ export default function Home() {
       // Ignore listener errors (e.g. Safari private mode).
     });
 
+    const logHistoryRef = dbRef("logHistory");
+    const unsubLogHistory = onValue(logHistoryRef, (snap) => {
+      setLogHistory(snap.val());
+    }, () => {});
+
     // Cleanup old log entries (older than 24h)
     const cutoff24h = Date.now() - 24 * 60 * 60 * 1000;
     const oldLogQuery = query(
@@ -259,6 +267,19 @@ export default function Home() {
     }).catch(() => {
       // Ignore cleanup failures.
     });
+
+    // Cleanup old logHistory entries (older than 30 days)
+    const cutoff30d = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    const oldHistoryQuery = query(
+      dbRef("logHistory"),
+      orderByChild("endedAt"),
+      endAt(cutoff30d)
+    );
+    get(oldHistoryQuery).then((snap) => {
+      snap.forEach((child) => {
+        remove(child.ref);
+      });
+    }).catch(() => {});
 
     // Cleanup old slots
     const yesterday = new Date();
@@ -282,6 +303,7 @@ export default function Home() {
       unsubStatus();
       unsubSlots();
       unsubLog();
+      unsubLogHistory();
     };
   }, [currentUser]);
 
@@ -289,12 +311,14 @@ export default function Home() {
     const now = Date.now();
     const durationSeconds = Math.floor((now - startedAt) / 1000);
     if (durationSeconds < 1 || !currentUser) return;
-    push(dbRef("log"), {
+    const entry = {
       user: currentUser,
       startedAt,
       endedAt: now,
       durationSeconds,
-    });
+    };
+    push(dbRef("log"), entry);
+    push(dbRef("logHistory"), entry);
   }, [currentUser]);
 
   const handleSelectUser = useCallback((name: string) => {
