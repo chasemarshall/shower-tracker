@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { USER_COLORS } from "@/lib/constants";
 import {
@@ -17,7 +17,41 @@ function formatHour(hour: number): string {
   return hour < 12 ? `${hour}am` : `${hour - 12}pm`;
 }
 
-export function ShowerAnalytics({ logHistory }: { logHistory: LogMap | null }) {
+interface ShowerAnalyticsProps {
+  logHistory: LogMap | null;
+  getAuthToken: () => Promise<string | null>;
+}
+
+export function ShowerAnalytics({ logHistory, getAuthToken }: ShowerAnalyticsProps) {
+  const [aiInsights, setAiInsights] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  const handleAskAI = async () => {
+    if (!logHistory) return;
+    setAiLoading(true);
+    setAiError(null);
+    try {
+      const token = await getAuthToken();
+      if (!token) throw new Error("Not authenticated");
+      const entries = Object.values(logHistory);
+      const res = await fetch("/api/analytics-insights", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({ entries }),
+      });
+      if (!res.ok) throw new Error("Failed to get insights");
+      const data = await res.json();
+      setAiInsights(data.insights);
+    } catch {
+      setAiError("Couldn't get AI insights. Try again.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
   const stats = useMemo(() => {
     if (!logHistory || Object.keys(logHistory).length === 0) return null;
     return {
@@ -227,6 +261,52 @@ export function ShowerAnalytics({ logHistory }: { logHistory: LogMap | null }) {
                 </span>
               </div>
             </div>
+          </motion.div>
+
+          {/* AI Insights */}
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.5 }}
+          >
+            <h3 className="font-mono text-xs font-bold uppercase tracking-wider mb-3">AI Insights</h3>
+
+            {aiError && (
+              <div className="brutal-card-sm bg-coral text-white rounded-xl p-3 mb-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-sm">{aiError}</span>
+                  <button
+                    className="font-display text-sm ml-2"
+                    onClick={() => setAiError(null)}
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {aiInsights ? (
+              <div className="brutal-card-sm bg-white rounded-xl p-4">
+                <p className="font-mono text-sm whitespace-pre-wrap">{aiInsights}</p>
+                <motion.button
+                  className="brutal-btn bg-white px-4 py-2 rounded-xl font-mono text-xs font-bold uppercase tracking-wider mt-3"
+                  onClick={handleAskAI}
+                  whileTap={{ scale: 0.97 }}
+                  disabled={aiLoading}
+                >
+                  {aiLoading ? "Thinking..." : "Refresh"}
+                </motion.button>
+              </div>
+            ) : (
+              <motion.button
+                className="brutal-btn bg-lime w-full py-4 rounded-xl font-display text-lg uppercase"
+                onClick={handleAskAI}
+                whileTap={{ scale: 0.97 }}
+                disabled={aiLoading}
+              >
+                {aiLoading ? "Thinking..." : "Ask AI"}
+              </motion.button>
+            )}
           </motion.div>
         </div>
       )}

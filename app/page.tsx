@@ -308,6 +308,11 @@ export default function Home() {
     };
   }, [currentUser]);
 
+  const getAuthToken = useCallback(async () => {
+    if (!authUser) return null;
+    return authUser.getIdToken();
+  }, [authUser]);
+
   const logShower = useCallback((startedAt: number) => {
     const now = Date.now();
     const durationSeconds = Math.floor((now - startedAt) / 1000);
@@ -466,7 +471,7 @@ export default function Home() {
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.55 }}
                 >
-                  <ShowerAnalytics logHistory={logHistory} />
+                  <ShowerAnalytics logHistory={logHistory} getAuthToken={getAuthToken} />
                 </motion.div>
               </>
             )}
