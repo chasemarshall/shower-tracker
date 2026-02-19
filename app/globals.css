@@ -8,6 +8,10 @@
   --frame: #1a1a1a;
   --lime: #BAFF39;
   --coral: #FF5C5C;
+  --sky: #67E8F9;
+  --yolk: #FFD166;
+  --mint: #06D6A0;
+  --bubblegum: #EF476F;
   --surface: #FFFFFF;
   --muted: #6B7280;
 }
@@ -17,9 +21,13 @@
     --paper: #1C1917;
     --ink: #E7E5E4;
     --frame: #57534E;
-    --lime: #84CC16;
+    --lime: #A3D911;
     --coral: #FF6B6B;
-    --surface: #292524;
+    --sky: #4DD8CC;
+    --yolk: #F0C050;
+    --mint: #34D399;
+    --bubblegum: #F472B6;
+    --surface: #342F2D;
     --muted: #A8A29E;
   }
 }
