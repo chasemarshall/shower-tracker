@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { set } from "firebase/database";
 import { dbRef } from "@/lib/firebase";
 import { MIN_SHOWER_SECONDS } from "@/lib/constants";
-import { isSlotForToday } from "@/lib/utils";
+import { getToday, isSlotForToday } from "@/lib/utils";
 import { sendPushNotification } from "@/lib/notifications";
 import type { ShowerStatus, SlotsMap, LogMap } from "@/lib/types";
 

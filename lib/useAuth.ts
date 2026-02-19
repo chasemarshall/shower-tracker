@@ -22,7 +22,7 @@ interface AuthState {
   signOut: () => Promise<void>;
 }
 
-async function checkAndWhitelistAtPath(
+export async function checkAndWhitelistAtPath(
   allowedPath: "allowedEmails",
   value: string
 ): Promise<{ allowed: boolean }> {

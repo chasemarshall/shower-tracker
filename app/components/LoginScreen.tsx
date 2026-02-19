@@ -4,6 +4,21 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Turnstile from "react-turnstile";
 
+/**
+ * Calls the Turnstile verification endpoint and returns whether the token is valid.
+ * Throws on network/parse errors so the caller can fail closed.
+ * Exported for unit testing.
+ */
+export async function verifyTurnstileToken(token: string): Promise<boolean> {
+  const res = await fetch("/api/verify-turnstile", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token }),
+  });
+  const data = await res.json();
+  return data.success === true;
+}
+
 export function LoginScreen({
   onGoogleSignIn,
   onEmailSignIn,
@@ -25,14 +40,9 @@ export function LoginScreen({
     setVerifying(true);
     setCaptchaError(null);
     try {
-      const res = await fetch("/api/verify-turnstile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
-      });
-      const data = await res.json();
-      setVerified(data.success === true);
-      if (data.success !== true) {
+      const success = await verifyTurnstileToken(token);
+      setVerified(success);
+      if (!success) {
         setCaptchaError("Verification failed. Please refresh and try again.");
       }
     } catch {
