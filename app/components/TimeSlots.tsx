@@ -25,6 +25,17 @@ export function TimeSlots({
         .sort(([, a], [, b]) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime))
     : [];
 
+  const isSlotPast = (slot: Slot) => {
+    if (slot.completed) return true;
+    if (slot.recurring) return false; // recurring slots are never permanently past
+    if (slot.date > today) return false;
+    const [h, m] = slot.startTime.split(":").map(Number);
+    const end = new Date();
+    end.setHours(h, m + slot.durationMinutes, 0, 0);
+    return end <= now;
+  };
+
+  const activeCount = allUpcoming.filter(([, s]) => !isSlotPast(s)).length;
   const totalCount = allUpcoming.length;
 
   // Group by date
@@ -37,16 +48,6 @@ export function TimeSlots({
   }
 
   const sortedDates = [...slotsByDate.keys()].sort();
-
-  const isSlotPast = (slot: Slot) => {
-    if (slot.completed) return true;
-    if (slot.recurring) return false; // recurring slots are never permanently past
-    if (slot.date > today) return false;
-    const [h, m] = slot.startTime.split(":").map(Number);
-    const end = new Date();
-    end.setHours(h, m + slot.durationMinutes, 0, 0);
-    return end <= now;
-  };
 
   const formatDateLabel = (dateStr: string) => {
     if (dateStr === today) return "Today";
@@ -71,7 +72,7 @@ export function TimeSlots({
         <h2 className="font-display text-xl uppercase">Upcoming Slots</h2>
         <div className="brutal-card-sm bg-surface px-3 py-1 rounded-lg">
           <span className="font-mono text-sm font-bold">
-            {totalCount} booked
+            {activeCount} booked
           </span>
         </div>
       </div>

@@ -24,6 +24,7 @@ export function ClaimModal({
   const [duration, setDuration] = useState(15);
   const [recurring, setRecurring] = useState(false);
   const [overlapError, setOverlapError] = useState(false);
+  const [pastError, setPastError] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -38,6 +39,7 @@ export function ClaimModal({
       setDuration(15);
       setRecurring(false);
       setOverlapError(false);
+      setPastError(false);
     }
   }, [isOpen]);
 
@@ -47,6 +49,16 @@ export function ClaimModal({
     const [newH, newM] = time.split(":").map(Number);
     const newStart = newH * 60 + newM;
     const newEnd = newStart + duration;
+
+    // Block booking in the past (unless recurring)
+    if (!recurring && date === getToday()) {
+      const now = new Date();
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+      if (newStart < nowMinutes) {
+        setPastError(true);
+        return;
+      }
+    }
 
     if (slots) {
       const overlap = Object.values(slots).some((slot) => {
@@ -129,6 +141,36 @@ export function ClaimModal({
               )}
             </AnimatePresence>
 
+            {/* Past time error toast */}
+            <AnimatePresence>
+              {pastError && (
+                <motion.div
+                  className="brutal-card-sm bg-coral text-white rounded-xl p-4 mb-4 flex items-center gap-3"
+                  initial={{ opacity: 0, y: -20, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                >
+                  <span className="text-2xl shrink-0">&#x23F0;</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-display text-sm uppercase leading-tight">
+                      Time Already Passed
+                    </p>
+                    <p className="font-mono text-xs mt-0.5 opacity-90">
+                      Pick a time that hasn&apos;t happened yet.
+                    </p>
+                  </div>
+                  <motion.button
+                    className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg bg-white/20 font-bold text-sm brutal-btn"
+                    onClick={() => setPastError(false)}
+                    whileTap={{ scale: 0.85 }}
+                  >
+                    &#x2715;
+                  </motion.button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <h3 className="font-display text-2xl uppercase mb-6">
               Claim a Slot
             </h3>
@@ -143,7 +185,7 @@ export function ClaimModal({
                   type="date"
                   value={date}
                   min={getToday()}
-                  onChange={(e) => { setDate(e.target.value); setOverlapError(false); }}
+                  onChange={(e) => { setDate(e.target.value); setOverlapError(false); setPastError(false); }}
                   className="brutal-input w-full rounded-xl"
                 />
               </div>
@@ -156,7 +198,7 @@ export function ClaimModal({
                 <input
                   type="time"
                   value={time}
-                  onChange={(e) => { setTime(e.target.value); setOverlapError(false); }}
+                  onChange={(e) => { setTime(e.target.value); setOverlapError(false); setPastError(false); }}
                   className="brutal-input w-full rounded-xl"
                 />
               </div>
