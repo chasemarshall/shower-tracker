@@ -15,6 +15,7 @@ export function LoginScreen({
 }) {
   const [verified, setVerified] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  const [captchaError, setCaptchaError] = useState<string | null>(null);
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,6 +23,7 @@ export function LoginScreen({
 
   const handleTurnstileSuccess = async (token: string) => {
     setVerifying(true);
+    setCaptchaError(null);
     try {
       const res = await fetch("/api/verify-turnstile", {
         method: "POST",
@@ -30,9 +32,13 @@ export function LoginScreen({
       });
       const data = await res.json();
       setVerified(data.success === true);
+      if (data.success !== true) {
+        setCaptchaError("Verification failed. Please refresh and try again.");
+      }
     } catch {
-      // Allow through if verification endpoint fails
-      setVerified(true);
+      // Fail closed: do not grant access if verification errors
+      setVerified(false);
+      setCaptchaError("Verification failed. Please refresh and try again.");
     }
     setVerifying(false);
   };
@@ -105,6 +111,11 @@ export function LoginScreen({
           {verifying && (
             <p className="font-mono text-sm uppercase tracking-wider animate-pulse">
               Checking...
+            </p>
+          )}
+          {captchaError && (
+            <p className="font-mono text-xs font-bold text-coral uppercase tracking-wider text-center">
+              {captchaError}
             </p>
           )}
         </motion.div>

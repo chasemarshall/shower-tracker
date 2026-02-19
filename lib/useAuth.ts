@@ -79,8 +79,10 @@ export function useAuth(): AuthState {
             setError(null);
           }
         } catch {
-          setUser(firebaseUser);
-          setError(null);
+          // Fail closed: deny access if allowlist check errors
+          await firebaseSignOut(auth);
+          setUser(null);
+          setError("Unable to verify access. Please try again.");
         }
       } else {
         setUser(null);
