@@ -20,6 +20,7 @@ import { TimeSlots } from "./components/TimeSlots";
 import { ClaimModal } from "./components/ClaimModal";
 import { TickerBar } from "./components/TickerBar";
 import { LoginScreen } from "./components/LoginScreen";
+import { ShowerAnalytics } from "./components/ShowerAnalytics";
 
 export default function Home() {
   const {
@@ -455,6 +456,20 @@ export default function Home() {
                 onClaimClick={() => setShowModal(true)}
               />
             </motion.div>
+
+            {/* Analytics (Chase only) */}
+            {currentUser === "Chase" && (
+              <>
+                <div className="border-t-3 border-ink border-dashed" />
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.55 }}
+                >
+                  <ShowerAnalytics logHistory={logHistory} />
+                </motion.div>
+              </>
+            )}
 
             {/* Footer */}
             <motion.footer
