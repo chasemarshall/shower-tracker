@@ -53,6 +53,25 @@ export function getSlotStartTimestamp(slot: Slot): number {
   return new Date(year, month - 1, day, hours, minutes, 0, 0).getTime();
 }
 
+/**
+ * Returns true if a slot applies to today — either it's a non-recurring slot
+ * scheduled for today, or it's a recurring slot (which applies every day).
+ */
+export function isSlotForToday(slot: Slot): boolean {
+  return slot.recurring === true || slot.date === getToday();
+}
+
+/**
+ * Like getSlotStartTimestamp but uses today's date for recurring slots,
+ * so timing calculations (notifications, auto-log) work correctly each day.
+ */
+export function getEffectiveSlotStartTimestamp(slot: Slot): number {
+  const date = slot.recurring ? getToday() : slot.date;
+  const [year, month, day] = date.split("-").map(Number);
+  const [hours, minutes] = slot.startTime.split(":").map(Number);
+  return new Date(year, month - 1, day, hours, minutes, 0, 0).getTime();
+}
+
 export function getSlotAlertKey(slotId: string, alertType: "owner-ten" | "owner-start" | "others-ten" | "others-start"): string {
   return `${slotId}:${alertType}`;
 }

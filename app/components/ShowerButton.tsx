@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { set } from "firebase/database";
 import { dbRef } from "@/lib/firebase";
 import { MIN_SHOWER_SECONDS } from "@/lib/constants";
-import { getToday } from "@/lib/utils";
+import { isSlotForToday } from "@/lib/utils";
 import { sendPushNotification } from "@/lib/notifications";
 import type { ShowerStatus, SlotsMap, LogMap } from "@/lib/types";
 
@@ -50,9 +50,8 @@ export function ShowerButton({
   const activeSlot = (() => {
     if (!isMe || !slots || !status?.startedAt) return null;
     const now = Date.now();
-    const today = getToday();
     for (const [id, slot] of Object.entries(slots)) {
-      if (slot.user !== currentUser || slot.date !== today) continue;
+      if (slot.user !== currentUser || !isSlotForToday(slot)) continue;
       const [h, m] = slot.startTime.split(":").map(Number);
       const slotStart = new Date();
       slotStart.setHours(h, m, 0, 0);

@@ -40,6 +40,7 @@ export function TimeSlots({
 
   const isSlotPast = (slot: Slot) => {
     if (slot.completed) return true;
+    if (slot.recurring) return false; // recurring slots are never permanently past
     if (slot.date > today) return false;
     const [h, m] = slot.startTime.split(":").map(Number);
     const end = new Date();

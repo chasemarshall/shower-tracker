@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/useAuth";
 import { onValue, push, remove, query, orderByChild, endAt, get } from "firebase/database";
 
 import { TEN_MINUTES_MS, SLOT_ALERT_WINDOW_MS } from "@/lib/constants";
-import { getToday, formatTimeRange, getSlotStartTimestamp, getSlotAlertKey } from "@/lib/utils";
+import { getToday, formatTimeRange, getEffectiveSlotStartTimestamp, getSlotAlertKey } from "@/lib/utils";
 import { getPersistedUser, persistUser, clearPersistedUser } from "@/lib/storage";
 import { subscribeToPush, sendPushNotification } from "@/lib/notifications";
 import type { ShowerStatus, SlotsMap, LogMap } from "@/lib/types";
@@ -108,7 +108,7 @@ export default function Home() {
       const now = Date.now();
 
       for (const [slotId, slot] of Object.entries(slots)) {
-        const slotStartTs = getSlotStartTimestamp(slot);
+        const slotStartTs = getEffectiveSlotStartTimestamp(slot);
         const ownerTenDiff = slotStartTs - TEN_MINUTES_MS - now;
         const ownerStartDiff = slotStartTs - now;
 
@@ -194,7 +194,7 @@ export default function Home() {
       const validKeys = new Set<string>();
       const validAutoLogKeys = new Set<string>();
       for (const [slotId, slot] of Object.entries(slots)) {
-        const slotStartTs = getSlotStartTimestamp(slot);
+        const slotStartTs = getEffectiveSlotStartTimestamp(slot);
         if (slotStartTs >= now - 5 * 60 * 1000) {
           validKeys.add(getSlotAlertKey(slotId, "owner-ten"));
           validKeys.add(getSlotAlertKey(slotId, "owner-start"));
@@ -271,7 +271,8 @@ export default function Home() {
     );
     get(oldSlotsQuery).then((snap) => {
       snap.forEach((child) => {
-        remove(child.ref);
+        // Never delete recurring slots — they apply every day regardless of original date
+        if (!child.val()?.recurring) remove(child.ref);
       });
     }).catch(() => {
       // Ignore cleanup failures (e.g. Safari private mode).
