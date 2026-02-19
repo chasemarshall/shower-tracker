@@ -171,7 +171,7 @@ export function ShowerAnalytics({ logHistory, getAuthToken }: ShowerAnalyticsPro
               {/* Day headers */}
               <div className="grid grid-cols-8 gap-1 mb-2">
                 <div /> {/* empty for user name col */}
-                {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
+                {["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"].map((d, i) => (
                   <span
                     key={i}
                     className="font-mono text-xs text-center font-bold text-gray-400"

@@ -24,8 +24,8 @@ export async function POST(req: NextRequest) {
 
     const summary = entries.map((e: { user: string; startedAt: number; endedAt: number; durationSeconds: number }) => ({
       user: e.user,
-      date: new Date(e.startedAt).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }),
-      time: new Date(e.startedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
+      date: new Date(e.startedAt).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "America/Chicago" }),
+      time: new Date(e.startedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/Chicago" }),
       durationMin: Math.round(e.durationSeconds / 60),
     }));
 

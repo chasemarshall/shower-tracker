@@ -59,7 +59,7 @@ export function UserSelectScreen({
         {visibleUsers.map((name, i) => (
           <motion.button
             key={name}
-            className={`brutal-btn ${colors[i % colors.length]} px-8 py-5 font-display text-xl ${i === 3 ? "text-white" : "text-ink"} rounded-xl`}
+            className={`brutal-btn ${colors[i % colors.length]} px-8 py-5 font-display text-xl ${name === "Dad" ? "text-white" : "text-ink"} rounded-xl`}
             initial={{ x: i % 2 === 0 ? -60 : 60, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             transition={{ delay: 0.4 + i * 0.1, type: "spring", stiffness: 200 }}

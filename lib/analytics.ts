@@ -44,6 +44,15 @@ export function computeLeaderboard(log: LogMap): {
   earlyBird: { user: string; avgHour: number };
   nightOwl: { user: string; avgHour: number };
 } {
+  if (Object.keys(log).length === 0) {
+    return {
+      mostShowers: { user: "-", count: 0 },
+      longestAvg: { user: "-", minutes: 0 },
+      earlyBird: { user: "-", avgHour: 0 },
+      nightOwl: { user: "-", avgHour: 0 },
+    };
+  }
+
   const counts: Record<string, number> = {};
   const durations: Record<string, { sum: number; count: number }> = {};
   const hours: Record<string, { sum: number; count: number }> = {};

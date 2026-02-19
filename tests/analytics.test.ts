@@ -53,4 +53,13 @@ describe("computeLeaderboard", () => {
     expect(result.earlyBird.user).toBe("Chase");
     expect(result.nightOwl.user).toBe("Mom");
   });
+
+  it("handles empty log without crashing", () => {
+    const result = computeLeaderboard({});
+    expect(result.mostShowers.user).toBe("-");
+    expect(result.mostShowers.count).toBe(0);
+    expect(result.longestAvg.minutes).toBe(0);
+    expect(result.earlyBird.avgHour).toBe(0);
+    expect(result.nightOwl.avgHour).toBe(0);
+  });
 });
