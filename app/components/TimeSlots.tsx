@@ -127,7 +127,7 @@ export function TimeSlots({
                               </span>
                             )}
                             {past && (
-                              <span className="font-mono text-xs ml-2 px-2 py-0.5 rounded-md" style={{ backgroundColor: "color-mix(in srgb, var(--ink) 10%, transparent)" }}>
+                              <span className="font-mono text-xs ml-2 px-2 py-0.5 rounded-md" style={{ backgroundColor: "color-mix(in srgb, var(--frame) 30%, transparent)" }}>
                                 done
                               </span>
                             )}

@@ -51,7 +51,7 @@ export function ShowerLog({ log }: { log: LogMap | null }) {
                 layout
               >
                 <div
-                  className={`${userColor(entry.user)} w-10 h-10 rounded-lg border-2 border-ink flex items-center justify-center font-display text-sm shrink-0`}
+                  className={`${userColor(entry.user)} w-10 h-10 rounded-lg border-2 border-frame flex items-center justify-center font-display text-sm shrink-0`}
                 >
                   {entry.user.charAt(0)}
                 </div>

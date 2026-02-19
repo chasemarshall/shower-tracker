@@ -5,6 +5,7 @@
 :root {
   --paper: #F5F0E8;
   --ink: #1a1a1a;
+  --frame: #1a1a1a;
   --lime: #BAFF39;
   --coral: #FF5C5C;
   --surface: #FFFFFF;
@@ -14,8 +15,9 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --paper: #1C1917;
-    --ink: #F5F0E8;
-    --lime: #BAFF39;
+    --ink: #E7E5E4;
+    --frame: #57534E;
+    --lime: #84CC16;
     --coral: #FF6B6B;
     --surface: #292524;
     --muted: #A8A29E;
@@ -54,8 +56,8 @@ body::before {
 
 /* Neobrutalist button press effect */
 .brutal-btn {
-  border: 3px solid var(--ink);
-  box-shadow: 5px 5px 0px var(--ink);
+  border: 3px solid var(--frame);
+  box-shadow: 5px 5px 0px var(--frame);
   transition: transform 0.1s ease, box-shadow 0.1s ease;
   cursor: pointer;
   position: relative;
@@ -63,37 +65,37 @@ body::before {
 
 .brutal-btn:hover {
   transform: translate(-1px, -1px);
-  box-shadow: 6px 6px 0px var(--ink);
+  box-shadow: 6px 6px 0px var(--frame);
 }
 
 .brutal-btn:active {
   transform: translate(3px, 3px);
-  box-shadow: 2px 2px 0px var(--ink);
+  box-shadow: 2px 2px 0px var(--frame);
 }
 
 .brutal-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
-  box-shadow: 5px 5px 0px var(--ink);
+  box-shadow: 5px 5px 0px var(--frame);
 }
 
 /* Brutal card */
 .brutal-card {
-  border: 3px solid var(--ink);
-  box-shadow: 5px 5px 0px var(--ink);
+  border: 3px solid var(--frame);
+  box-shadow: 5px 5px 0px var(--frame);
 }
 
 /* Brutal card small */
 .brutal-card-sm {
-  border: 2px solid var(--ink);
-  box-shadow: 3px 3px 0px var(--ink);
+  border: 2px solid var(--frame);
+  box-shadow: 3px 3px 0px var(--frame);
 }
 
 /* Pulsing glow for occupied status */
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 5px 5px 0px var(--ink), 0 0 0px var(--coral); }
-  50% { box-shadow: 5px 5px 0px var(--ink), 0 0 30px var(--coral); }
+  0%, 100% { box-shadow: 5px 5px 0px var(--frame), 0 0 0px var(--coral); }
+  50% { box-shadow: 5px 5px 0px var(--frame), 0 0 30px var(--coral); }
 }
 
 .pulse-occupied {
@@ -144,7 +146,7 @@ body::before {
 
 /* Neobrutalist input */
 .brutal-input {
-  border: 3px solid var(--ink);
+  border: 3px solid var(--frame);
   background: var(--surface);
   color: var(--ink);
   padding: 12px 16px;
@@ -159,7 +161,7 @@ body::before {
 }
 
 .brutal-input:focus {
-  box-shadow: 3px 3px 0px var(--ink);
+  box-shadow: 3px 3px 0px var(--frame);
 }
 
 /* Scrollbar styling */
@@ -172,6 +174,6 @@ body::before {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--ink);
+  background: var(--frame);
   border: 2px solid var(--paper);
 }

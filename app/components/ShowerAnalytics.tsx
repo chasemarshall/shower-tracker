@@ -164,7 +164,7 @@ export function ShowerAnalytics({ logHistory, getAuthToken }: ShowerAnalyticsPro
                             {formatHour(hour)}
                           </span>
                           <div
-                            className={`${USER_COLORS[user] ?? "bg-surface"} h-4 rounded border-2 border-ink`}
+                            className={`${USER_COLORS[user] ?? "bg-surface"} h-4 rounded border-2 border-frame`}
                             style={{
                               width: `${(count / maxCount) * 100}%`,
                               minWidth: "8px",
@@ -224,7 +224,7 @@ export function ShowerAnalytics({ logHistory, getAuthToken }: ShowerAnalyticsPro
                       return (
                         <div
                           key={dayIndex}
-                          className={`${USER_COLORS[user] ?? "bg-surface"} h-6 rounded border border-ink`}
+                          className={`${USER_COLORS[user] ?? "bg-surface"} h-6 rounded border border-frame`}
                           style={{ opacity }}
                           title={`${count} showers`}
                         />

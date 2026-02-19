@@ -460,7 +460,7 @@ export default function Home() {
             </motion.div>
 
             {/* Divider */}
-            <div className="border-t-3 border-ink border-dashed" />
+            <div className="border-t-3 border-frame border-dashed" />
 
             {/* Time slots */}
             <motion.div
@@ -478,7 +478,7 @@ export default function Home() {
             {/* Analytics (Chase only) */}
             {currentUser === "Chase" && (
               <>
-                <div className="border-t-3 border-ink border-dashed" />
+                <div className="border-t-3 border-frame border-dashed" />
                 <motion.div
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
