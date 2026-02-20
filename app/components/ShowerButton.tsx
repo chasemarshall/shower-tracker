@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { set } from "firebase/database";
 import { dbRef } from "@/lib/firebase";
 import { MIN_SHOWER_SECONDS } from "@/lib/constants";
-import { getToday, isSlotForToday } from "@/lib/utils";
+import { isSlotForToday, getEffectiveSlotStartTimestamp } from "@/lib/utils";
 import { sendPushNotification } from "@/lib/notifications";
 import type { ShowerStatus, SlotsMap, LogMap } from "@/lib/types";
 
@@ -52,12 +52,10 @@ export function ShowerButton({
     const now = Date.now();
     for (const [id, slot] of Object.entries(slots)) {
       if (slot.user !== currentUser || !isSlotForToday(slot)) continue;
-      const [h, m] = slot.startTime.split(":").map(Number);
-      const slotStart = new Date();
-      slotStart.setHours(h, m, 0, 0);
-      const slotEnd = slotStart.getTime() + slot.durationMinutes * 60 * 1000;
+      const slotStartMs = getEffectiveSlotStartTimestamp(slot);
+      const slotEnd = slotStartMs + slot.durationMinutes * 60 * 1000;
       // Shower started within 10 minutes of slot start through slot end
-      if (status.startedAt >= slotStart.getTime() - 10 * 60 * 1000 && now <= slotEnd + 10 * 60 * 1000) {
+      if (status.startedAt >= slotStartMs - 10 * 60 * 1000 && now <= slotEnd + 10 * 60 * 1000) {
         return { id, ...slot };
       }
     }
@@ -84,14 +82,11 @@ export function ShowerButton({
 
     // Check for upcoming slots
     if (slots) {
-      const now = new Date();
-      const today = getToday();
+      const now = Date.now();
       for (const slot of Object.values(slots)) {
-        if (slot.date !== today) continue;
-        const [h, m] = slot.startTime.split(":").map(Number);
-        const slotStart = new Date();
-        slotStart.setHours(h, m, 0, 0);
-        const diffMin = (slotStart.getTime() - now.getTime()) / 60000;
+        if (!isSlotForToday(slot)) continue;
+        const slotStartMs = getEffectiveSlotStartTimestamp(slot);
+        const diffMin = (slotStartMs - now) / 60000;
         if (diffMin > 0 && diffMin <= 5) {
           alert(
             `Heads up: ${slot.user} has a slot at ${slot.startTime}. Starting anyway.`

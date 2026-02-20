@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { set } from "firebase/database";
 import { dbRef } from "@/lib/firebase";
 import { AUTO_RELEASE_SECONDS } from "@/lib/constants";
-import { formatElapsed, formatTimeRange, timeAgo, isSlotForToday } from "@/lib/utils";
+import { formatElapsed, formatTimeRange, timeAgo, isSlotForToday, getEffectiveSlotStartTimestamp } from "@/lib/utils";
 import { sendPushNotification } from "@/lib/notifications";
 import type { ShowerStatus, LogMap, SlotsMap } from "@/lib/types";
 
@@ -39,11 +39,9 @@ export function StatusBanner({
     const now = Date.now();
     for (const slot of Object.values(slots)) {
       if (!isSlotForToday(slot) || slot.completed) continue;
-      const [h, m] = slot.startTime.split(":").map(Number);
-      const slotStart = new Date();
-      slotStart.setHours(h, m, 0, 0);
-      const slotEnd = slotStart.getTime() + slot.durationMinutes * 60 * 1000;
-      if (now >= slotStart.getTime() && now <= slotEnd) {
+      const slotStartMs = getEffectiveSlotStartTimestamp(slot);
+      const slotEnd = slotStartMs + slot.durationMinutes * 60 * 1000;
+      if (now >= slotStartMs && now <= slotEnd) {
         return slot;
       }
     }

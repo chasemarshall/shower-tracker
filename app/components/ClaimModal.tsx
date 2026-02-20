@@ -62,15 +62,12 @@ export function ClaimModal({
 
     if (slots) {
       const overlap = Object.values(slots).some((slot) => {
-        if (slot.date !== date && !slot.recurring && !recurring) return false;
-        if (slot.date !== date && !slot.recurring && recurring) return false;
-        if (slot.date === date || slot.recurring || recurring) {
-          const [sh, sm] = slot.startTime.split(":").map(Number);
-          const sStart = sh * 60 + sm;
-          const sEnd = sStart + slot.durationMinutes;
-          return newStart < sEnd && newEnd > sStart;
-        }
-        return false;
+        const couldOverlap = slot.date === date || slot.recurring || recurring;
+        if (!couldOverlap) return false;
+        const [sh, sm] = slot.startTime.split(":").map(Number);
+        const sStart = sh * 60 + sm;
+        const sEnd = sStart + slot.durationMinutes;
+        return newStart < sEnd && newEnd > sStart;
       });
 
       if (overlap) {
