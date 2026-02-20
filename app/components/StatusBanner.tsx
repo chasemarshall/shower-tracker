@@ -70,19 +70,17 @@ export function StatusBanner({
 
   // Auto-release (fire only once)
   useEffect(() => {
-    if (isMe && elapsed >= AUTO_RELEASE_SECONDS && !autoReleasedRef.current) {
-      autoReleasedRef.current = true;
-      if (status?.startedAt) onAutoRelease(status.startedAt);
-      set(dbRef("status"), { currentUser: null, startedAt: null });
-      if (status?.currentUser) {
-        sendPushNotification({
-          title: "\u{1F6BF} SHOWER",
-          body: `${status.currentUser} is done`,
-          excludeUser: status.currentUser,
-        });
-      }
-    }
-  }, [isMe, elapsed]);
+    if (!isMe || elapsed < AUTO_RELEASE_SECONDS || autoReleasedRef.current) return;
+    if (!status?.startedAt || !status?.currentUser) return;
+    autoReleasedRef.current = true;
+    onAutoRelease(status.startedAt);
+    set(dbRef("status"), { currentUser: null, startedAt: null });
+    sendPushNotification({
+      title: "\u{1F6BF} SHOWER",
+      body: `${status.currentUser} is done`,
+      excludeUser: status.currentUser,
+    });
+  }, [isMe, elapsed, status, onAutoRelease]);
 
   return (
     <motion.div

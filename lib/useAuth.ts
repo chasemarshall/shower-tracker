@@ -10,7 +10,7 @@ import {
   signOut as firebaseSignOut,
   User,
 } from "firebase/auth";
-import { ref, get, set } from "firebase/database";
+import { ref, get, set, runTransaction } from "firebase/database";
 import { auth, googleProvider, db } from "./firebase";
 
 interface AuthState {
@@ -37,14 +37,23 @@ export async function checkAndWhitelistAtPath(
     }
   }
 
-  if (existing.includes(value)) return { allowed: true };
+  const normalized = value.trim().toLowerCase();
+  if (existing.some((e) => e.trim().toLowerCase() === normalized))
+    return { allowed: true };
 
   const graceSnap = await get(ref(db, "graceUntil"));
   if (graceSnap.exists()) {
     const graceUntil = graceSnap.val() as number;
     if (Date.now() < graceUntil) {
-      existing.push(value);
-      await set(ref(db, allowedPath), existing);
+      await runTransaction(ref(db, allowedPath), (current) => {
+        const arr: string[] = Array.isArray(current)
+          ? current
+          : current ? Object.values(current) : [];
+        if (!arr.some((e) => e.trim().toLowerCase() === normalized)) {
+          arr.push(normalized);
+        }
+        return arr;
+      });
       return { allowed: true };
     }
   }
