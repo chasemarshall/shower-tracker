@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb, adminPath } from "@/lib/firebaseAdmin";
 import { requireAuthorizedRequest } from "@/lib/apiAuth";
+import { USERS } from "@/lib/constants";
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,8 +12,8 @@ export async function POST(req: NextRequest) {
 
     const { subscription, user } = await req.json();
 
-    if (!subscription || typeof subscription.endpoint !== "string" || !user) {
-      return NextResponse.json({ error: "Missing subscription or user" }, { status: 400 });
+    if (!subscription || typeof subscription.endpoint !== "string" || !user || !USERS.includes(user)) {
+      return NextResponse.json({ error: "Missing or invalid subscription/user" }, { status: 400 });
     }
 
     // Use a hash of the endpoint as the key (base64url-encode it for Firebase key compatibility)

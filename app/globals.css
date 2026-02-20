@@ -157,7 +157,8 @@ body::before {
 
 /* Modal backdrop */
 .modal-backdrop {
-  background: transparent;
+  background: rgba(26, 26, 26, 0.4);
+  backdrop-filter: blur(2px);
 }
 
 /* Neobrutalist input */

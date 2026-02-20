@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { set } from "firebase/database";
 import { dbRef } from "@/lib/firebase";
@@ -104,10 +104,19 @@ export function ShowerButton({
     });
   };
 
+  const [extending, setExtending] = useState(false);
+  const extendTimeout = useRef<NodeJS.Timeout | null>(null);
+
   const handleExtend = () => {
-    if (!activeSlot) return;
+    if (!activeSlot || extending) return;
+    setExtending(true);
     set(dbRef(`slots/${activeSlot.id}/durationMinutes`), activeSlot.durationMinutes + 5);
+    extendTimeout.current = setTimeout(() => setExtending(false), 1000);
   };
+
+  useEffect(() => {
+    return () => { if (extendTimeout.current) clearTimeout(extendTimeout.current); };
+  }, []);
 
   const label = isMe
     ? cooldown ? "JUST STARTED..." : "I'M DONE"
@@ -137,7 +146,8 @@ export function ShowerButton({
         <motion.button
           className="brutal-btn py-6 px-4 rounded-2xl font-display text-xl sm:text-2xl tracking-wide bg-yolk text-ink shrink-0"
           onClick={handleExtend}
-          whileTap={{ scale: 0.95 }}
+          disabled={extending}
+          whileTap={extending ? undefined : { scale: 0.95 }}
         >
           +5m
         </motion.button>

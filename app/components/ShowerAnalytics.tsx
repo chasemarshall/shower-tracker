@@ -375,12 +375,13 @@ export function ShowerAnalytics({ logHistory, getAuthToken }: ShowerAnalyticsPro
               <div className="brutal-card-sm bg-coral text-white rounded-xl p-3 mb-3">
                 <div className="flex items-center justify-between">
                   <span className="font-mono text-sm">{aiError}</span>
-                  <button
-                    className="font-display text-sm ml-2"
+                  <motion.button
+                    className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg bg-white/20 font-bold text-sm brutal-btn"
                     onClick={() => setAiError(null)}
+                    whileTap={{ scale: 0.85 }}
                   >
                     ✕
-                  </button>
+                  </motion.button>
                 </div>
               </div>
             )}
@@ -451,7 +452,7 @@ export function ShowerAnalytics({ logHistory, getAuthToken }: ShowerAnalyticsPro
                     New Normal
                   </motion.button>
                   <motion.button
-                    className="brutal-btn bg-coral px-3 py-1 rounded-lg text-sm"
+                    className="brutal-btn bg-coral px-3 py-1 rounded-lg font-display text-sm uppercase"
                     onClick={() => handleAskAI(true)}
                     whileTap={{ scale: 0.95 }}
                     disabled={aiLoading}
@@ -472,7 +473,7 @@ export function ShowerAnalytics({ logHistory, getAuthToken }: ShowerAnalyticsPro
                   {aiLoading ? "Thinking..." : "Ask AI"}
                 </motion.button>
                 <motion.button
-                  className="brutal-btn bg-coral py-4 px-5 rounded-xl text-2xl"
+                  className="brutal-btn bg-coral py-4 px-5 rounded-xl font-display text-2xl uppercase"
                   onClick={() => handleAskAI(true)}
                   whileTap={{ scale: 0.95 }}
                   disabled={aiLoading}
